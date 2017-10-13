@@ -1,0 +1,27 @@
+{
+  "name": "ShadowsocksConfig",
+  "version": "0.0.1",
+  "description": "ShadowsocksConfig",
+  "main": "shadowsocks_config.js",
+  "scripts": {
+    "build": "tsc shadowsocks_config.ts",
+    "test": "echo TODO: write tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uProxy/ShadowsocksConfig.git"
+  },
+  "author": "jab <jab@users.noreply.github.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/uProxy/ShadowsocksConfig/issues"
+  },
+  "homepage": "https://github.com/uProxy/ShadowsocksConfig#readme",
+  "dependencies": {
+    "base-64": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/base-64": "^0.1.2",
+    "typescript": "^2.5.3"
+  }
+}

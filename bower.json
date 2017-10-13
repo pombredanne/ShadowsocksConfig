@@ -1,0 +1,17 @@
+{
+  "name": "ShadowsocksConfig",
+  "homepage": "https://github.com/uProxy/ShadowsocksConfig",
+  "authors": [
+    "jab <jab@users.noreply.github.com>"
+  ],
+  "description": "",
+  "main": "shadowsocks_config.js",
+  "license": "Apache-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
