@@ -2,11 +2,11 @@
   "name": "ShadowsocksConfig",
   "version": "0.0.1",
   "description": "ShadowsocksConfig",
-  "main": "shadowsocks_config.js",
+  "main": "ShadowsocksConfig.js",
   "scripts": {
-    "build": "./node_modules/.bin/tsc shadowsocks_config.ts",
-    "gulp": "./node_modules/.bin/tsc --target es6 Gulpfile.ts && ./node_modules/.bin/gulp",
-    "test": "echo TODO: write tests"
+    "gulp": "./node_modules/.bin/tsc --target es6 Gulpfile.ts && gulp",
+    "build": "npm run gulp build",
+    "test": "npm run gulp test"
   },
   "repository": {
     "type": "git",
@@ -19,22 +19,22 @@
   },
   "homepage": "https://github.com/uProxy/ShadowsocksConfig#readme",
   "devDependencies": {
-    "@types/gulp": "^4.0.4",
-    "base-64": "^0.1.0",
     "@types/base-64": "^0.1.2",
-    "gulp": "^3.9.1",
-    "typescript": "^2.5.3",
-    "gulp-load-plugins": "^1.5.0",
-    "gulp-replace": "^0.6.1",
-    "gulp-typescript": "^3.2.2"
-  },
-  "dependencies": {
     "@types/chai": "^4.0.4",
+    "@types/gulp": "^4.0.4",
     "@types/mocha": "^2.2.43",
     "chai": "^4.1.2",
-    "es6-promise": "^4.1.1",
+    "gulp": "^3.9.1",
+    "gulp-cli": "^1.4.0",
     "gulp-debug": "^3.1.0",
+    "gulp-load-plugins": "^1.5.0",
+    "gulp-replace": "^0.6.1",
+    "gulp-typescript": "^3.2.2",
     "mocha": "^4.0.1",
-    "run-sequence": "^2.2.0"
+    "run-sequence": "^2.2.0",
+    "typescript": "^2.5.3"
+  },
+  "dependencies": {
+    "base-64": "^0.1.0"
   }
 }

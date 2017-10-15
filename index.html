@@ -1,0 +1,22 @@
+<head>
+  <title>Example usage of &lt;shadowsocks-config&gt; element</title>
+  <link rel="import" href="shadowsocks-config.html">
+  <style>body{font-family:monospace;}</style>
+</head>
+<body>
+  <h1>Example usage of &lt;shadowsocks-config&gt; element</h1>
+  <shadowsocks-config id="ssconfig"
+    uri="ss://YWVzLTEyOC1nY206dGVzdA==@192.168.100.1:8888#tag%20name"></shadowsocks-config>
+  <script>
+    'use strict';
+    const pre = document.createElement('pre');
+    pre.textContent = ssconfig.outerHTML;
+    document.body.appendChild(pre);
+
+    document.body.appendChild(document.createElement('hr'));
+
+    'method password host port tag'.split(' ').forEach((field) => {
+      document.write(`${field}: ${ssconfig[field]} <br>`);
+    });
+  </script>
+</body>

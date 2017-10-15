@@ -5,7 +5,7 @@
     "jab <jab@users.noreply.github.com>"
   ],
   "description": "",
-  "main": "shadowsocks_config.js",
+  "main": "ShadowsocksConfig.js",
   "license": "Apache-2.0",
   "ignore": [
     "**/.*",
@@ -13,5 +13,9 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "base-64": "^0.1.0",
+    "web-component-tester": "^6.3.0"
+  }
 }
