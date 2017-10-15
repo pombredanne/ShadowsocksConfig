@@ -1,0 +1,4 @@
+node_modules/
+test/unit/*.js
+test/unit/*.js.map
+Gulpfile.js

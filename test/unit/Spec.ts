@@ -1,0 +1,3 @@
+interface Spec {
+  run(): void;
+}
