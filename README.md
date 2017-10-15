@@ -1,5 +1,7 @@
 # ShadowsocksConfig
 
+[![Build Status](https://travis-ci.org/uProxy/ShadowsocksConfig.svg?branch=master)](https://travis-ci.org/uProxy/ShadowsocksConfig)
+
 This library abstracts parsing, validation, and user presentation
 of Shadowsocks configuration URIs.
 It is written in TypeScript and can be imported as a WebComponent,
