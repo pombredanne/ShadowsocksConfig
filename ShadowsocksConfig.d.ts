@@ -1,59 +1,59 @@
 export declare class ShadowsocksConfigError extends Error {
-    constructor(message?: string);
+    constructor(message: string);
 }
 export declare class InvalidShadowsocksURI extends ShadowsocksConfigError {
     readonly message: string;
     constructor(message: string);
 }
-export declare type Host = string;
-export declare type Port = number;
-export declare type Password = string;
-export declare type Tag = string;
-export declare enum Method {
-    RC4_MD5 = "rc4-md5",
-    AES_128_GCM = "aes-128-gcm",
-    AES_192_GCM = "aes-192-gcm",
-    AES_256_GCM = "aes-256-gcm",
-    AES_128_CFB = "aes-128-cfb",
-    AES_192_CFB = "aes-192-cfb",
-    AES_256_CFB = "aes-256-cfb",
-    AES_128_CTR = "aes-128-ctr",
-    AES_192_CTR = "aes-192-ctr",
-    AES_256_CTR = "aes-256-ctr",
-    CAMELLIA_128_CFB = "camellia-128-cfb",
-    CAMELLIA_192_CFB = "camellia-192-cfb",
-    CAMELLIA_256_CFB = "camellia-256-cfb",
-    BF_CFB = "bf-cfb",
-    'CHACHA20-IETF-POLY1305' = "chacha20-ietf-poly1305",
-    SALSA20 = "salsa20",
-    CHACHA20 = "chacha20",
-    CHACHA20_IETF = "chacha20-ietf",
+export declare class ConfigData {
+    readonly data: string;
+    constructor(data: string);
+    toString(): string;
+}
+export declare class Host extends ConfigData {
+    constructor(data: string);
+}
+export declare class Port extends ConfigData {
+    constructor(data: string);
+}
+export declare class Method extends ConfigData {
+    private static METHODS;
+    constructor(data: string);
+}
+export declare class Password extends ConfigData {
+    constructor(data: string);
+}
+export declare class Tag extends ConfigData {
+    constructor(data: string);
+}
+export declare class Sip003Plugin extends ConfigData {
+    constructor(data: string);
 }
 export declare class ShadowsocksConfig {
-    host: Host;
-    port: Port;
-    method: Method;
-    password: Password;
-    tag: Tag;
-    constructor(data: {});
+    host?: Host;
+    port?: Port;
+    method?: Method;
+    password?: Password;
+    tag?: Tag;
+    constructor(config: ShadowsocksConfig);
 }
 export declare abstract class ShadowsocksURI extends ShadowsocksConfig {
-    constructor(data: {});
+    constructor(config: ShadowsocksConfig);
     abstract toString(): string;
     static validateProtocol(uri: string): void;
-    static validateMethod(method: string): void;
-    static validateAndConvertPort(portString: string): number;
+    static getHash(config: ShadowsocksConfig): string;
+    static parse(uri: string): ShadowsocksConfig;
 }
 export declare class LegacyBase64URI extends ShadowsocksURI {
-    private b64EncodedData;
-    constructor(uri: string);
+    b64EncodedData: string;
+    constructor(config: ShadowsocksConfig);
+    static parse(uri: string): LegacyBase64URI;
     toString(): string;
 }
 export declare class Sip002URI extends ShadowsocksURI {
-    private b64EncodedUserInfo;
-    private plugin_;
-    constructor(uri: string);
+    b64EncodedUserInfo: string;
+    plugin?: Sip003Plugin;
+    constructor(config: ShadowsocksConfig);
+    static parse(uri: string): Sip002URI;
     toString(): string;
-    readonly plugin: string;
 }
-export declare function parseURI(uri: string): ShadowsocksURI;

@@ -30,27 +30,37 @@ gulp.task('build:lib', () => {
 
 gulp.task('build:test', () => {
   return gulp.src([
-    './test/unit/*.ts'
+    './test/unit/*.ts',
   ])
   .pipe(plugins.typescript({
     target: 'es6',
     module: 'none',
-    sourceMap: true
+    sourceMap: true,
   }))
   .pipe(gulp.dest('./test/unit'));
 })
 
+gulp.task('build', (done) => {
+  // TODO: stop if e.g. build:lib fails, don't continue to build:test
+  runSequence(
+    'build:lib',
+    'build:test',
+    done
+  );
+});
+
 gulp.task('default', [
-  'build:lib'
+  'build:lib',
 ]);
 
 gulp.task('test', (done) => {
+  // TODO: stop if e.g. build:lib fails, don't continue to build:test
   runSequence(
     'build:lib',
     'build:test',
     'test:unit',
     done
-  )
+  );
 });
 
 gulp.task('test:unit', () => {
