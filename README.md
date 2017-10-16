@@ -17,8 +17,8 @@ See `index.html` for example usage.
 ### Common JS (Node)
 
 ```javascript
-const parseURI = require('ShadowsocksConfig').parseURI;
-parseURI('ss://...')
+const parse = require('ShadowsocksConfig').ShadowsocksURI.parse;
+parse('ss://...')
 ```
 
 ### TypeScript
@@ -28,7 +28,7 @@ parseURI('ss://...')
 ```
 
 ```javascript
-import { parseURI } from 'ShadowsocksConfig';
+import * as ssconfig from 'ShadowsocksConfig';
 ```
 
 ## Development
