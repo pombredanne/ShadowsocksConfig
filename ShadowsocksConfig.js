@@ -1,15 +1,16 @@
 "use strict";
-if (typeof exports === "undefined") {
-      var exports = {};
-    }
-    Object.defineProperty(exports, "__esModule", { value: true });
+Object.defineProperty(exports, "__esModule", { value: true });
 const base_64_1 = require("base-64");
-const url_1 = require("url");
-// Custom errors
+try {
+    URL;
+}
+catch (_) {
+    global.URL = require('url').URL;
+}
 class ShadowsocksConfigError extends Error {
     constructor(message) {
-        super(message); // 'Error' breaks prototype chain here if this is transpiled to es5
-        Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+        super(message);
+        Object.setPrototypeOf(this, new.target.prototype);
         this.name = new.target.name;
     }
 }
@@ -21,15 +22,6 @@ class InvalidShadowsocksURI extends ShadowsocksConfigError {
     }
 }
 exports.InvalidShadowsocksURI = InvalidShadowsocksURI;
-// End custom errors
-// Self-validating/normalizing config data types subclass this ConfigData class.
-// Constructors take a string, validate/normalize/accept if valid, or throw otherwise.
-// Some examples (Port is a ConfigData subclass, see below):
-//   new Port('')           -> throws
-//   new Port('not a port') -> throws
-//   new Port('-123')       -> throws
-//   new Port('123.4')      -> throws
-//   new Port('01234')      -> '1234'
 class ConfigData {
     constructor(data) {
         this.data = data;
@@ -42,11 +34,11 @@ exports.ConfigData = ConfigData;
 function throwErrorForInvalidField(fieldName, fieldValue) {
     throw new ShadowsocksConfigError(`Invalid ${fieldName}: ${fieldValue}`);
 }
-// Host and Port validation/normalization are built on top of URL for safety and efficiency.
 class Host extends ConfigData {
     constructor(data) {
+        URL;
         try {
-            const urlParserResult = new url_1.URL(`http://${data}/`);
+            const urlParserResult = new URL(`http://${data}/`);
             super(urlParserResult.hostname);
         }
         catch (_) {
@@ -55,14 +47,14 @@ class Host extends ConfigData {
     }
 }
 exports.Host = Host;
-// NOTE: Port data is stored as a string, not a number, as in a URL instance.
 class Port extends ConfigData {
     constructor(data) {
         const throwError = () => throwErrorForInvalidField('port', data);
         if (!data)
             throwError();
+        URL;
         try {
-            const urlParserResult = new url_1.URL(`http://0.0.0.0:${data}/`);
+            const urlParserResult = new URL(`http://0.0.0.0:${data}/`);
             super(urlParserResult.port);
         }
         catch (_) {
@@ -71,8 +63,6 @@ class Port extends ConfigData {
     }
 }
 exports.Port = Port;
-// A method value must exactly match an element in the set of known ciphers.
-// ref: https://github.com/shadowsocks/shadowsocks-libev/blob/10a2d3e3/completions/bash/ss-redir#L5
 class Method extends ConfigData {
     constructor(data) {
         if (!Method.METHODS.has(data)) {
@@ -84,8 +74,6 @@ class Method extends ConfigData {
 Method.METHODS = new Set('rc4-md5 aes-128-gcm aes-192-gcm aes-256-gcm aes-128-cfb aes-192-cfb aes-256-cfb aes-128-ctr aes-192-ctr aes-256-ctr camellia-128-cfb camellia-192-cfb camellia-256-cfb bf-cfb chacha20-ietf-poly1305 salsa20 chacha20 chacha20-ietf'
     .split(' '));
 exports.Method = Method;
-// Currently no validation is performed for Password, Tag, or Sip003Plugin.
-// Client code is responsible for validating and sanitizing these when using with untrusted input.
 class Password extends ConfigData {
     constructor(data) {
         super(data);
@@ -128,6 +116,7 @@ class ShadowsocksURI extends ShadowsocksConfig {
     }
     static parse(uri) {
         let error;
+        URL;
         for (const UriType of [LegacyBase64URI, Sip002URI]) {
             try {
                 return UriType.parse(uri);
@@ -147,7 +136,6 @@ class ShadowsocksURI extends ShadowsocksConfig {
     }
 }
 exports.ShadowsocksURI = ShadowsocksURI;
-// Ref: https://shadowsocks.org/en/config/quick-guide.html
 class LegacyBase64URI extends ShadowsocksURI {
     constructor(config) {
         super(config);
@@ -204,12 +192,6 @@ class LegacyBase64URI extends ShadowsocksURI {
     }
 }
 exports.LegacyBase64URI = LegacyBase64URI;
-// Ref: https://shadowsocks.org/en/spec/SIP002-URI-Scheme.html
-// NOTE: Currently the plugin query param is preserved on a best-effort basis. It is silently
-//       dropped on platforms that do not support the full whatwg URL standard (cf. `searchParams`).
-//       Ref:
-//         - https://url.spec.whatwg.org/#url-class
-//         - https://caniuse.com/#feat=urlsearchparams
 class Sip002URI extends ShadowsocksURI {
     constructor(config) {
         super(config);
@@ -222,15 +204,13 @@ class Sip002URI extends ShadowsocksURI {
     }
     static parse(uri) {
         ShadowsocksURI.validateProtocol(uri);
-        // replace "ss" with "http" so URL built-in parser parses it correctly.
         const inputForUrlParser = `http${uri.substring(2)}`;
-        // The built-in URL parser throws as desired when given URIs with invalid syntax.
-        const urlParserResult = new url_1.URL(inputForUrlParser);
+        URL;
+        const urlParserResult = new URL(inputForUrlParser);
         const host = new Host(urlParserResult.hostname);
         const port = new Port(urlParserResult.port);
         const tag = new Tag(decodeURIComponent(urlParserResult.hash.substring(1)));
         const b64EncodedUserInfo = urlParserResult.username.replace(/%3D/g, '=');
-        // base64.decode throws as desired when given invalid base64 input.
         const b64DecodedUserInfo = base_64_1.decode(b64EncodedUserInfo);
         const colonIdx = b64DecodedUserInfo.indexOf(':');
         if (colonIdx === -1) {
@@ -255,20 +235,3 @@ class Sip002URI extends ShadowsocksURI {
     }
 }
 exports.Sip002URI = Sip002URI;
-if (typeof module !== 'undefined') {
-    module.exports = {
-        ShadowsocksConfigError,
-        InvalidShadowsocksURI,
-        ConfigData,
-        Host,
-        Port,
-        Method,
-        Password,
-        Tag,
-        Sip003Plugin,
-        ShadowsocksConfig,
-        ShadowsocksURI,
-        LegacyBase64URI,
-        Sip002URI,
-    };
-}

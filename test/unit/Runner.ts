@@ -6,16 +6,13 @@ const path = require('path');
 
 export class MochaRunner {
 
-  constructor(
-    public dir: string = __dirname
-  ) {
+  constructor(public dir = __dirname) {
     this.loadSpecs();
   }
 
   private loadSpecs(): (() => {})[] {
     return fs.readdirSync(this.dir)
-      .filter(file => file.endsWith('.spec.js'))
-      .forEach(file => require(path.join(this.dir, file)));
+      .filter((file: string) => file.endsWith('spec.js'))
+      .forEach((file: string) => require(path.join(this.dir, file)));
   }
-
 }

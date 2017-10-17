@@ -1,5 +1,7 @@
 import { decode as b64Decode, encode as b64Encode } from 'base-64';
-import { URL } from 'url';
+
+// Node compatibility - allows running mocha tests:
+try { URL; } catch (_) { (global as any).URL = require('url').URL; }
 
 // Custom errors
 export class ShadowsocksConfigError extends Error {
@@ -266,22 +268,4 @@ export class Sip002URI extends ShadowsocksURI {
     const hash = ShadowsocksURI.getHash(this);
     return `ss://${b64EncodedUserInfo}@${host}:${port}/${queryString}${hash}`;
   }
-}
-
-if (typeof module !== 'undefined') {
-  module.exports = {
-    ShadowsocksConfigError,
-    InvalidShadowsocksURI,
-    ConfigData,
-    Host,
-    Port,
-    Method,
-    Password,
-    Tag,
-    Sip003Plugin,
-    ShadowsocksConfig,
-    ShadowsocksURI,
-    LegacyBase64URI,
-    Sip002URI,
-  };
 }

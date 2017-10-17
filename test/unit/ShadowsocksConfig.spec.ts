@@ -2,11 +2,12 @@
 /// <reference types="mocha" />
 
 import { expect } from 'chai';
+
 import {
   Host, Port, Method, Password, Tag,
   ShadowsocksConfig, ShadowsocksURI, Sip002URI, LegacyBase64URI,
   ShadowsocksConfigError, InvalidShadowsocksURI,
-} from '../../ShadowsocksConfig';
+} from './ShadowsocksConfig';
 
 describe('ShadowsocksConfig', () => {
 

@@ -2,9 +2,9 @@
   "name": "ShadowsocksConfig",
   "version": "0.0.1",
   "description": "ShadowsocksConfig",
-  "main": "ShadowsocksConfig.js",
+  "main": "dist/ShadowsocksConfig",
   "scripts": {
-    "gulp": "./node_modules/.bin/tsc --target es6 Gulpfile.ts && gulp",
+    "gulp": "./node_modules/.bin/tsc -t ES6 Gulpfile.ts && gulp",
     "build": "npm run gulp build",
     "test": "npm run gulp test"
   },
@@ -23,6 +23,7 @@
     "@types/chai": "^4.0.4",
     "@types/gulp": "^4.0.4",
     "@types/mocha": "^2.2.43",
+    "@types/node": "^8.0.41",
     "chai": "^4.1.2",
     "gulp": "^3.9.1",
     "gulp-cli": "^1.4.0",
@@ -32,6 +33,7 @@
     "gulp-typescript": "^3.2.2",
     "mocha": "^4.0.1",
     "run-sequence": "^2.2.0",
+    "tslib": "^1.8.0",
     "typescript": "^2.5.3"
   },
   "dependencies": {

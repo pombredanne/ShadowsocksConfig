@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "outDir": ".",
+    "rootDir": ".",
+    "target": "ES6",
+    "module": "none",
+    "declaration": false,
+    "sourceMap": false,
+    "inlineSourceMap": false,
+    "listFiles": true,
+    "traceResolution": true,
+    "pretty": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "removeComments": true,
+    "lib": [
+      "ES6",
+      "DOM"
+    ],
+    "types" : [
+    ]
+  },
+  "files": [
+    "*.ts"
+  ],
+  "exclude": [
+    "Gulpfile.ts"
+  ],
+  "compileOnSave": false
+}
