@@ -29,15 +29,29 @@ export class InvalidShadowsocksURI extends ShadowsocksConfigError {
 //   new Port('123.4')      -> throws
 //   new Port('01234')      -> '1234'
 export class ConfigData {
-  constructor(public readonly data: string) {}
+
+  public pattern: RegExp | undefined;
+
+  constructor(public readonly data: string) {
+    this.validate(data);
+  }
 
   toString() {
     return this.data.toString();
   }
-}
 
-function throwErrorForInvalidField(fieldName: string, fieldValue: string) {
-  throw new ShadowsocksConfigError(`Invalid ${fieldName}: ${fieldValue}`);
+  protected validate(data: string): void {
+    // when there is a pattern defined, but validate was not overloaded
+    if (typeof this.pattern !== 'undefined') {
+
+    }
+  }
+
+  protected throwErrorForInvalidField(value: string) {
+    const name = this.constructor.name;
+    throw new ShadowsocksConfigError(`Invalid ${name}: ${value}`);
+  }
+
 }
 
 // Host and Port validation/normalization are built on top of URL for safety and efficiency.
@@ -47,7 +61,7 @@ export class Host extends ConfigData {
       const urlParserResult = new URL(`http://${data}/`);
       super(urlParserResult.hostname);
     } catch (_) {
-      throwErrorForInvalidField('host', data);
+      this.throwErrorForInvalidField(data);
     }
   }
 }
@@ -55,7 +69,7 @@ export class Host extends ConfigData {
 // NOTE: Port data is stored as a string, not a number, as in a URL instance.
 export class Port extends ConfigData {
   constructor(data: string) {
-    const throwError = () => throwErrorForInvalidField('port', data);
+    const throwError = () => this.throwErrorForInvalidField(data);
     if (!data) throwError();
     try {
       const urlParserResult = new URL(`http://0.0.0.0:${data}/`);
@@ -91,15 +105,16 @@ export class Method extends ConfigData {
    ]);
 
   constructor(data: string) {
-    if (!Method.METHODS.has(data)) {
-      throwErrorForInvalidField('method', data);
-    }
     super(data);
+  }
+
+  protected validate(data: string) {
+    if (!Method.METHODS.has(data)) {
+      this.throwErrorForInvalidField(data);
+    }
   }
 }
 
-// Currently no validation is performed for Password, Tag, or Sip003Plugin.
-// Client code is responsible for validating and sanitizing these when using with untrusted input.
 export class Password extends ConfigData {
   constructor(data: string) {
     super(data);
