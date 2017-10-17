@@ -69,9 +69,26 @@ export class Port extends ConfigData {
 // A method value must exactly match an element in the set of known ciphers.
 // ref: https://github.com/shadowsocks/shadowsocks-libev/blob/10a2d3e3/completions/bash/ss-redir#L5
 export class Method extends ConfigData {
-  private static METHODS = new Set(
-    'rc4-md5 aes-128-gcm aes-192-gcm aes-256-gcm aes-128-cfb aes-192-cfb aes-256-cfb aes-128-ctr aes-192-ctr aes-256-ctr camellia-128-cfb camellia-192-cfb camellia-256-cfb bf-cfb chacha20-ietf-poly1305 salsa20 chacha20 chacha20-ietf'
-    .split(' '));
+  private static METHODS = new Set([
+    'rc4-md5',
+    'aes-128-gcm',
+    'aes-192-gcm',
+    'aes-256-gcm',
+    'aes-128-cfb',
+    'aes-192-cfb',
+    'aes-256-cfb',
+    'aes-128-ctr',
+    'aes-192-ctr',
+    'aes-256-ctr',
+    'camellia-128-cfb',
+    'camellia-192-cfb',
+    'camellia-256-cfb',
+    'bf-cfb',
+    'chacha20-ietf-poly1305',
+    'salsa20',
+    'chacha20',
+    'chacha20-ietf'
+   ]);
 
   constructor(data: string) {
     if (!Method.METHODS.has(data)) {
