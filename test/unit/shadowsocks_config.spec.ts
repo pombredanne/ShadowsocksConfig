@@ -7,11 +7,11 @@ import {
   Host, Port, Method, Password, Tag,
   Config, ShadowsocksURI, Sip002URI, LegacyBase64URI,
   Plugin, InvalidConfigField, InvalidURI,
-} from '../../ShadowsocksConfig';
+} from '../../shadowsocks_config';
 
-describe('ShadowsocksConfig', () => {
+describe('shadowsocks_config', () => {
 
-  describe('Field validation', () => {
+  describe('field validation', () => {
 
     it('only accepts hosts that are valid IP addresses', () => {
       for (const valid of ['127.0.0.1', '2001:0:ce49:7601:e866:efff:62c3:fffe']) {
