@@ -25,15 +25,15 @@ export class InvalidShadowsocksURI extends ShadowsocksConfigError {
 // End custom errors
 
 
-// Self-validating/normalizing config data types subclass this ConfigData class.
+// Self-validating/normalizing config data types subclass this ConfigField class.
 // Constructors take a string, validate/normalize/accept if valid, or throw otherwise.
-// Some examples (Port is a ConfigData subclass, see below):
+// Some examples (Port is a ConfigField subclass, see below):
 //   new Port('')           -> throws
 //   new Port('not a port') -> throws
 //   new Port('-123')       -> throws
 //   new Port('123.4')      -> throws
 //   new Port('01234')      -> '1234'
-export class ConfigData {
+export class ConfigField {
 
   public pattern: RegExp | undefined;
 
@@ -60,7 +60,7 @@ export class ConfigData {
 }
 
 // Host and Port validation/normalization are built on top of URL for safety and efficiency.
-export class Host extends ConfigData {
+export class Host extends ConfigField {
   constructor(data: string) {
     try {
       const urlParserResult = new URL(`http://${data}/`);
@@ -72,7 +72,7 @@ export class Host extends ConfigData {
 }
 
 // NOTE: Port data is stored as a string, not a number, as in a URL instance.
-export class Port extends ConfigData {
+export class Port extends ConfigField {
   constructor(data: string) {
     const throwError = () => this.throwErrorForInvalidField(data);
     if (!data) throwError();
@@ -87,7 +87,7 @@ export class Port extends ConfigData {
 
 // A method value must exactly match an element in the set of known ciphers.
 // ref: https://github.com/shadowsocks/shadowsocks-libev/blob/10a2d3e3/completions/bash/ss-redir#L5
-export class Method extends ConfigData {
+export class Method extends ConfigField {
   private static METHODS = new Set([
     'rc4-md5',
     'aes-128-gcm',
@@ -120,13 +120,13 @@ export class Method extends ConfigData {
   }
 }
 
-export class Password extends ConfigData {
+export class Password extends ConfigField {
   constructor(data: string) {
     super(data);
   }
 }
 
-export class Tag extends ConfigData {
+export class Tag extends ConfigField {
   public pattern = /^[A-z0-9-]+$/;
 
   constructor(data: string) {
@@ -134,7 +134,7 @@ export class Tag extends ConfigData {
   }
 }
 
-export class Sip003Plugin extends ConfigData {
+export class Sip003Plugin extends ConfigField {
   constructor(data: string) {
     super(data);
   }
