@@ -1,12 +1,11 @@
 /// <reference types="node" />
 
-declare var isNode: boolean;
+const isBrowser = typeof window !== 'undefined';
+const b64Encode = isBrowser ? btoa : require('base-64').encode;
+const b64Decode = isBrowser ? atob : require('base-64').decode;
+const URL = isBrowser ? window.URL : require('url').URL;
 
-const b64Encode = isNode ? require('base-64').encode : btoa;
-const b64Decode = isNode ? require('base-64').decode : atob;
-const URL = isNode ? require('url').URL : window.URL;
-
-// Custom errors
+// Custom error base class
 export class ShadowsocksConfigError extends Error {
   constructor(message: string) {
     super(message);  // 'Error' breaks prototype chain here if this is transpiled to es5
@@ -15,13 +14,18 @@ export class ShadowsocksConfigError extends Error {
   }
 }
 
-export class InvalidShadowsocksURI extends ShadowsocksConfigError {
+export class InvalidConfigField extends ShadowsocksConfigError {
+  constructor(public readonly message: string) {
+    super(message);
+  }
+}
+
+export class InvalidURI extends ShadowsocksConfigError {
   constructor(public readonly message: string) {
     super(message);
   }
 }
 // End custom errors
-
 
 // Self-validating/normalizing config data types subclass this ConfigField class.
 // Constructors take a string, validate/normalize/accept if valid, or throw otherwise.
@@ -37,35 +41,35 @@ export class ConfigField {
   toString() {
     return this.data.toString();
   }
-
-  protected throwErrorForInvalidField(value: any) {
-    const name = this.constructor.name;
-    throw new ShadowsocksConfigError(`Invalid ${name}: ${value}`);
-  }
 }
 
-// Host and Port validation/normalization are built on top of URL for safety and efficiency.
+function throwErrorForInvalidField(name: string, value: any) {
+  throw new InvalidConfigField(`Invalid ${name}: ${value}`);
+}
+
 export class Host extends ConfigField {
   constructor(host: Host | string) {
     if (host instanceof Host) {
       host = host.data;
     }
     try {
+      // TODO: use https://www.npmjs.com/package/ip-address to restrict to only IP addresses
       const urlParserResult = new URL(`http://${host}/`);
       super(urlParserResult.hostname);
     } catch (_) {
-      this.throwErrorForInvalidField(host);
+      throwErrorForInvalidField('host', host);
     }
   }
 }
 
+// Port validation/normalization is built on top of URL for safety and efficiency.
 // NOTE: Port data is stored as a string, not a number, as in a URL instance.
 export class Port extends ConfigField {
   constructor(port: Port | string | number) {
     if (port instanceof Port) {
       port = port.data;
     }
-    const throwError = () => this.throwErrorForInvalidField(port);
+    const throwError = () => throwErrorForInvalidField('port', port);
     if (port === '') throwError();
     try {
       const urlParserResult = new URL(`http://0.0.0.0:${port}/`);
@@ -106,7 +110,7 @@ export class Method extends ConfigField {
     }
     super(method);
     if (!Method.METHODS.has(method)) {
-      this.throwErrorForInvalidField(method);
+      throwErrorForInvalidField('method', method);
     }
   }
 }
@@ -115,25 +119,25 @@ export class Method extends ConfigField {
 // Client code is responsible for validating and sanitizing these when using with untrusted input.
 // TODO: Document this in the README.
 export class Password extends ConfigField {
-  constructor(password: Password | string) {
-    super(password instanceof Password ? password.data : password);
+  constructor(password?: Password | string) {
+    super((password instanceof Password ? password.data : password) || '');
   }
 }
 
 export class Tag extends ConfigField {
-  constructor(tag: Tag | string) {
-    super(tag instanceof Tag ? tag.data : tag);
+  constructor(tag?: Tag | string) {
+    super((tag instanceof Tag ? tag.data : tag) || '');
   }
 }
 
 export class Plugin extends ConfigField {
-  constructor(plugin: Plugin | string) {
-    super(plugin instanceof Plugin ? plugin.data : plugin);
+  constructor(plugin?: Plugin | string) {
+    super((plugin instanceof Plugin ? plugin.data : plugin) || '');
   }
 }
 // End ConfigField types.
 
-export interface ShadowsocksConfig {
+export interface UnsafeConfig {
   host?: Host | string;
   port?: Port | string | number;
   method?: Method | string;
@@ -142,29 +146,19 @@ export interface ShadowsocksConfig {
   plugin?: Plugin | string;
 }
 
-export class ValidatingShadowsocksConfig implements ShadowsocksConfig {
-  private host_?: Host;
-  private port_?: Port;
-  private method_?: Method;
-  private password_?: Password;
-  private tag_?: Tag;
+export class Config implements UnsafeConfig {
+  private host_: Host;
+  private port_: Port;
+  private method_: Method;
+  private password_: Password;
+  private tag_: Tag;
 
-  constructor(config: ShadowsocksConfig | ValidatingShadowsocksConfig) {
-    if (config.host) {
-      this.host = config.host;
-    }
-    if (config.port) {
-      this.port = config.port;
-    }
-    if (config.method) {
-      this.method = config.method;
-    }
-    if (config.password) {
-      this.password = config.password;
-    }
-    if (config.tag) {
-      this.tag = config.tag;
-    }
+  constructor(config: UnsafeConfig) {
+    this.host = config.host;
+    this.port = config.port;
+    this.method = config.method;
+    this.password = config.password;
+    this.tag = config.tag;
   }
 
   set host(host: Host | string) {
@@ -188,45 +182,45 @@ export class ValidatingShadowsocksConfig implements ShadowsocksConfig {
   }
 
   get host() {
-    return this.host_ && this.host_.toString();
+    return this.host_.toString();
   }
 
   get port() {
-    return this.port_ && this.port_.toString();
+    return this.port_.toString();
   }
 
   get method() {
-    return this.method_ && this.method_.toString();
+    return this.method_.toString();
   }
 
   get password() {
-    return this.password_ && this.password_.toString();
+    return this.password_.toString();
   }
 
   get tag() {
-    return this.tag_ && this.tag_.toString();
+    return this.tag_.toString();
   }
 }
 
-export abstract class ShadowsocksURI extends ValidatingShadowsocksConfig {
-  constructor(config: ShadowsocksConfig | ValidatingShadowsocksConfig) {
-    super(config);
+export abstract class ShadowsocksURI extends Config {
+  constructor(config: UnsafeConfig) {
+    super(new Config(config));
   }
 
   abstract toString(): string;
 
   static validateProtocol(uri: string) {
     if (!uri.startsWith('ss://')) {
-      throw new InvalidShadowsocksURI(`URI must start with "ss://": ${uri}`);
+      throw new InvalidURI(`URI must start with "ss://": ${uri}`);
     }
   }
 
-  static getHash(config: ShadowsocksConfig | ValidatingShadowsocksConfig) {
+  static getHash(config: UnsafeConfig) {
     const tag = config.tag instanceof Tag ? config.tag.data : config.tag;
     return tag ? `#${encodeURIComponent(tag)}` : '';
   }
 
-  static parse(uri: string): ShadowsocksConfig {
+  static parse(uri: string): UnsafeConfig {
     let error: Error;
     for (const UriType of [LegacyBase64URI, Sip002URI]) {
       try {
@@ -235,12 +229,12 @@ export abstract class ShadowsocksURI extends ValidatingShadowsocksConfig {
         error = error || e;
       }
     }
-    if (!(error instanceof InvalidShadowsocksURI)) {
+    if (!(error instanceof InvalidURI)) {
       const originalErrorName = (error as Error).name || '(Unnamed Error)';
       const originalErrorMessage = (error as Error).message || '(no error message provided)';
       const originalErrorString = `${originalErrorName}: ${originalErrorMessage}`;
       const newErrorMessage = `Invalid input: ${uri} - Original error: ${originalErrorString}`;
-      error = new InvalidShadowsocksURI(newErrorMessage);
+      error = new InvalidURI(newErrorMessage);
     }
     throw error;
   }
@@ -250,8 +244,8 @@ export abstract class ShadowsocksURI extends ValidatingShadowsocksConfig {
 export class LegacyBase64URI extends ShadowsocksURI {
   b64EncodedData: string;
 
-  constructor(config: ShadowsocksConfig | ValidatingShadowsocksConfig) {
-    super(config);
+  constructor(config: UnsafeConfig) {
+    super(new Config(config));
     const { method, password, host, port } = this;
     const b64EncodedData = b64Encode(`${method}:${password}@${host}:${port}`);
     const dataLength = b64EncodedData.length;
@@ -274,12 +268,12 @@ export class LegacyBase64URI extends ShadowsocksURI {
     const b64DecodedData = b64Decode(b64EncodedData);
     const atSignIndex = b64DecodedData.indexOf('@');
     if (atSignIndex === -1) {
-      throw new InvalidShadowsocksURI(`Missing "@": ${b64DecodedData}`);
+      throw new InvalidURI(`Missing "@": ${b64DecodedData}`);
     }
     const methodAndPassword = b64DecodedData.substring(0, atSignIndex);
     const methodEndIndex = methodAndPassword.indexOf(':');
     if (methodEndIndex === -1) {
-      throw new InvalidShadowsocksURI(`Missing password part: ${methodAndPassword}`);
+      throw new InvalidURI(`Missing password part: ${methodAndPassword}`);
     }
     const methodString = methodAndPassword.substring(0, methodEndIndex);
     const method = new Method(methodString);
@@ -290,7 +284,7 @@ export class LegacyBase64URI extends ShadowsocksURI {
     const hostAndPort = b64DecodedData.substring(hostStartIndex);
     const hostEndIndex = hostAndPort.indexOf(':');
     if (hostEndIndex === -1) {
-      throw new InvalidShadowsocksURI(`Missing port part: ${hostAndPort}`);
+      throw new InvalidURI(`Missing port part: ${hostAndPort}`);
     }
     const host = new Host(hostAndPort.substring(0, hostEndIndex));
     const portStartIndex = hostEndIndex + 1;
@@ -314,24 +308,21 @@ export class LegacyBase64URI extends ShadowsocksURI {
 //         - https://caniuse.com/#feat=urlsearchparams
 export class Sip002URI extends ShadowsocksURI {
   b64EncodedUserInfo: string;
-  private plugin_?: Plugin;
+  private plugin_: Plugin;
 
-  constructor(config: ShadowsocksConfig | ValidatingShadowsocksConfig) {
-    super(config);
+  constructor(config: UnsafeConfig) {
+    super(new Config(config));
     const { method, password } = this;
     this.b64EncodedUserInfo = b64Encode(`${method}:${password}`);
-    const plugin = (config as Sip002URI).plugin;
-    if (plugin) {
-      this.plugin = plugin;
-    }
+    this.plugin = (config as Sip002URI).plugin;
+  }
+
+  set plugin(plugin: Plugin | string | undefined) {
+    this.plugin_ = new Plugin(plugin);
   }
 
   get plugin() {
-    return this.plugin_ && this.plugin_.toString();
-  }
-
-  set plugin(plugin: Plugin | string) {
-    this.plugin_ = new Plugin(plugin);
+    return this.plugin_.toString();
   }
 
   static parse(uri: string) {
@@ -348,7 +339,7 @@ export class Sip002URI extends ShadowsocksURI {
     const b64DecodedUserInfo = b64Decode(b64EncodedUserInfo);
     const colonIdx = b64DecodedUserInfo.indexOf(':');
     if (colonIdx === -1) {
-      throw new InvalidShadowsocksURI(`Missing password part: ${b64DecodedUserInfo}`);
+      throw new InvalidURI(`Missing password part: ${b64DecodedUserInfo}`);
     }
     const methodString = b64DecodedUserInfo.substring(0, colonIdx);
     const method = new Method(methodString);
@@ -368,8 +359,4 @@ export class Sip002URI extends ShadowsocksURI {
     const hash = ShadowsocksURI.getHash(this);
     return `ss://${b64EncodedUserInfo}@${host}:${port}/${queryString}${hash}`;
   }
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports
 }

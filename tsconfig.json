@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
-    "outDir": ".",
-    "rootDir": ".",
-    "target": "ES5",
-    "module": "commonjs",
+    "target": "ES6",
+    "module": "none",
     "declaration": false,
     "sourceMap": false,
     "inlineSourceMap": false,
@@ -15,15 +13,9 @@
     "removeComments": true,
     "lib": [
       "ES6",
-      "DOM",
-      "ES2015.Promise"
-    ],
-    "types" : [
+      "DOM"
     ]
   },
-  "files": [
-    "*.ts"
-  ],
   "exclude": [
     "Gulpfile.ts"
   ],

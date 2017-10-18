@@ -7,16 +7,15 @@ const MochaLib = require('mocha');
 
 const plugins = gulpLoadPlugins();
 
-const moduleCompatibilityHeader = `(function() {
-const isNode = (typeof module !== 'undefined'); 
-const _module_exports = (function() {
-    if (isNode) {
-        return  module.exports;
+const moduleCompatibilityHeader = `(function iife() {
+  const platformExportObj = (function detectPlatformExportObj() {
+    if (typeof module !== 'undefined' && module.exports) {
+      return module.exports;  // node
     } else if (typeof window !== 'undefined') {
-        return window;
+      return window;  // browser
     }
-    throw new Error('Import failed: incompatible import interface');
-})();`;
+    throw new Error('Could not detect platform global object (no window or module.exports)');
+  })();`;
 
 const moduleCompatibilityFooter = `})();`;
 
@@ -25,24 +24,23 @@ gulp.task('build:lib', () => {
 
   return gulp.src([
       '*.ts',
+      '!Gulpfile.ts',
       '!*.d.ts'
     ])
+    // Handle source maps manually rather than having tsc generate them because we
+    // modify the output of tsc.
     .pipe(plugins.sourcemaps.init())
     .pipe(tsProject())
-    // .pipe(plugins.replace(
-    //   'Object.defineProperty(exports, "__esModule", { value: true });',
-    //   [
-    //     'if (typeof exports === "undefined") { var exports = {}; }',
-    //     'Object.defineProperty(exports, "__esModule", { value: true });'
-    //   ].join('\n')
-    // ))
+    .once('error', function () {
+      this.once('finish', () => process.exit(1))
+    })
     .pipe(plugins.replace(
       'Object.defineProperty(exports, "__esModule", { value: true });',
       moduleCompatibilityHeader
     ))
     .pipe(plugins.replace(
-      /^exports\./,
-      '_module_exports'
+      'exports.',
+      'platformExportObj.'
     ))
     .pipe(plugins.insert.append(moduleCompatibilityFooter))
     .pipe(plugins.sourcemaps.write())
@@ -50,21 +48,18 @@ gulp.task('build:lib', () => {
 });
 
 gulp.task('build:tests', () => {
+  const tsProject = plugins.typescript.createProject('tsconfig.json', {
+    module: 'commonjs',
+    moduleResolution: 'node',
+  });
   return gulp.src([
       './test/unit/*.ts',
     ])
-    .pipe(plugins.typescript({
-      target: 'ES6',
-      module: 'commonjs',
-      moduleResolution: 'node',
-      isolatedModules: true,
-      allowJs: true,
-      noImplicitAny: true,
-      noImplicitThis: true,
-      removeComments: true,
-      rootDir: '.',
-      outDir: './test/unit',
-    }))
+    .pipe(tsProject())
+    .once('error', function () {
+      this.once('finish', () => process.exit(1))
+    })
+    .js
     .pipe(gulp.dest('./test/unit'));
 });
 

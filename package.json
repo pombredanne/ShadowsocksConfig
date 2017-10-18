@@ -2,11 +2,11 @@
   "name": "ShadowsocksConfig",
   "version": "0.0.1",
   "description": "ShadowsocksConfig",
-  "main": "dist/ShadowsocksConfig",
+  "main": "ShadowsocksConfig",
   "scripts": {
     "gulp": "./node_modules/.bin/tsc -t ES6 Gulpfile.ts && gulp",
-    "build": "npm run gulp build",
-    "test": "npm run gulp test"
+    "build": "yarn run gulp build",
+    "test": "yarn run gulp test"
   },
   "repository": {
     "type": "git",

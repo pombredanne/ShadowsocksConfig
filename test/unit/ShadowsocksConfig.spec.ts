@@ -5,65 +5,59 @@ import { expect } from 'chai';
 
 import {
   Host, Port, Method, Password, Tag,
-  ValidatingShadowsocksConfig, ShadowsocksURI, Sip002URI, LegacyBase64URI,
-  Plugin, ShadowsocksConfigError, InvalidShadowsocksURI,
+  Config, ShadowsocksURI, Sip002URI, LegacyBase64URI,
+  Plugin, InvalidConfigField, InvalidURI,
 } from '../../ShadowsocksConfig';
 
 describe('ShadowsocksConfig', () => {
 
-  describe('validators', () => {
+  describe('Field validation', () => {
 
-    it('accept valid hosts', () => {
-      expect(new Host('localhost').toString()).to.equal('localhost');
-      expect(new Host('127.0.0.1').toString()).to.equal('127.0.0.1');
-      expect(new Host('example.com').toString()).to.equal('example.com');
+    it('only accepts hosts that are valid IP addresses', () => {
+      for (const valid of ['127.0.0.1', '2001:0:ce49:7601:e866:efff:62c3:fffe']) {
+        expect(new Host(valid).toString()).to.equal(valid);
+      }
+      expect(() => new Host('localhost').toString()).to.throw(InvalidConfigField);
+      expect(() => new Host('example.com').toString()).to.throw(InvalidConfigField);
+      expect(() => new Host('-')).to.throw(InvalidConfigField);
+      expect(() => new Host('.')).to.throw(InvalidConfigField);
+      expect(() => new Host('....')).to.throw(InvalidConfigField);
+      expect(() => new Host('8675309')).to.throw(InvalidConfigField);
+      expect(() => new Host('-foo')).to.throw(InvalidConfigField);
     });
 
-    it('throw on empty host', () => {
-      expect(() => new Host('')).to.throw(ShadowsocksConfigError);
+    it('throws on empty host', () => {
+      expect(() => new Host('')).to.throw(InvalidConfigField);
     });
 
-    it('accept valid ports', () => {
+    it('accepts valid ports', () => {
       expect(new Port('8388').toString()).to.equal('8388');
       expect(new Port('443').toString()).to.equal('443');
     });
 
-    // TODO: These tests currently fail because the URL builtin accepts these
-    // host values. Do we want to get into the business of validating hosts
-    // ourselves?
-    /*
-    it('throw on invalid host', () => {
-      expect(() => new Host('-')).to.throw(ShadowsocksConfigError);
-      expect(() => new Host('.')).to.throw(ShadowsocksConfigError);
-      expect(() => new Host('....')).to.throw(ShadowsocksConfigError);
-      expect(() => new Host('8675309')).to.throw(ShadowsocksConfigError);
-      expect(() => new Host('-foo')).to.throw(ShadowsocksConfigError);
-    });
-    */
-
-    it('throw on empty port', () => {
-      expect(() => new Port('')).to.throw(ShadowsocksConfigError);
+    it('throws on empty port', () => {
+      expect(() => new Port('')).to.throw(InvalidConfigField);
     });
 
-    it('throw on invalid port', () => {
-      expect(() => new Port('foo')).to.throw(ShadowsocksConfigError);
-      expect(() => new Port('-123')).to.throw(ShadowsocksConfigError);
-      expect(() => new Port('123.4')).to.throw(ShadowsocksConfigError);
+    it('throws on invalid port', () => {
+      expect(() => new Port('foo')).to.throw(InvalidConfigField);
+      expect(() => new Port('-123')).to.throw(InvalidConfigField);
+      expect(() => new Port('123.4')).to.throw(InvalidConfigField);
     });
 
     it('normalizes non-normalized but valid port', () => {
       expect(new Port('01234').toString()).to.equal('1234');
     });
 
-    it('throw on empty method', () => {
-      expect(() => new Method('')).to.throw(ShadowsocksConfigError);
+    it('throws on empty method', () => {
+      expect(() => new Method('')).to.throw(InvalidConfigField);
     });
 
-    it('throw on invalid method', () => {
-      expect(() => new Method('foo')).to.throw(ShadowsocksConfigError);
+    it('throws on invalid method', () => {
+      expect(() => new Method('foo')).to.throw(InvalidConfigField);
     });
 
-    it('accept valid methods', () => {
+    it('accepts valid methods', () => {
       for (const method of [
         'rc4-md5',
         'aes-128-gcm',
@@ -84,55 +78,62 @@ describe('ShadowsocksConfig', () => {
         'chacha20',
         'chacha20-ietf',
       ]) {
-        expect(() => new Method(method)).to.not.throw();
+        expect(new Method(method).toString()).to.equal(method);
       }
     });
 
-    it('accept empty password', () => {
-      expect(() => new Password('')).to.not.throw();
+    it('accepts empty or undefined password', () => {
+      expect(new Password('').toString()).to.equal('');
+      expect(new Password().toString()).to.equal('');
     });
 
-    it('accept empty tag', () => {
-      expect(() => new Tag('')).to.not.throw();
+    it('accepts empty or undefined tag', () => {
+      expect(new Tag('').toString()).to.equal('');
+      expect(new Tag().toString()).to.equal('');
     });
 
-    it('accept valid Sip003 plugin', () => {
+    it('accepts empty or undefined plugin', () => {
+      expect(new Plugin('').toString()).to.equal('');
+      expect(new Plugin().toString()).to.equal('');
+    });
+
+    it('accepts valid plugin', () => {
       expect(new Plugin('obfs-local;obfs=http').toString()).to.equal('obfs-local;obfs=http');
     });
 
-    it('throw on invalid Sip003 plugin', () => {
+    it('throws on invalid Sip003 plugin', () => {
       // TODO: Fill this in if plugin validation gets implemented.
     });
 
-    it('allow configs with missing fields', () => {
-      expect(() => new ValidatingShadowsocksConfig({
+    it('throws on Config with missing or invalid fields', () => {
+      expect(() => new Config({
         host: '192.168.100.1',
         port: '8989',
-      })).to.not.throw();
+      })).to.throw(InvalidConfigField);
 
-      expect(() => new ValidatingShadowsocksConfig({
+      expect(() => new Config({
         method: 'aes-128-gcm',
         password: 'test',
-      })).to.not.throw();
+      })).to.throw(InvalidConfigField);
     });
 
     it('throw on invalid configs', () => {
-      expect(() => new ValidatingShadowsocksConfig({
+      expect(() => new Config({
         port: 'foo',
         method: 'aes-128-gcm',
-      })).to.throw(ShadowsocksConfigError);
+      })).to.throw(InvalidConfigField);
 
-      expect(() => new ValidatingShadowsocksConfig({
+      expect(() => new Config({
         port: '1337',
         method: 'foo',
-      })).to.throw(ShadowsocksConfigError);
+      })).to.throw(InvalidConfigField);
     });
   });
 
   describe('URI serializer', () => {
 
     it('can serialize a SIP002 URI', () => {
-      const config = new ValidatingShadowsocksConfig({
+      const config = new Config({
         host: '192.168.100.1',
         port: '8888',
         method: 'aes-128-gcm',
@@ -143,8 +144,20 @@ describe('ShadowsocksConfig', () => {
         'ss://YWVzLTEyOC1nY206dGVzdA==@192.168.100.1:8888/#Foo%20Bar');
     });
 
+    it('can serialize a SIP002 URI with IPv6 host', () => {
+      const config = new Config({
+        host: '2001:0:ce49:7601:e866:efff:62c3:fffe',
+        port: '8888',
+        method: 'aes-128-gcm',
+        password: 'test',
+        tag: 'Foo Bar',
+      });
+      expect(new Sip002URI(config).toString()).to.equal(
+        'ss://YWVzLTEyOC1nY206dGVzdA==@[2001:0:ce49:7601:e866:efff:62c3:fffe]:8888/#Foo%20Bar');
+    });
+
     it('can serialize a legacy base64 URI', () => {
-      const config = new ValidatingShadowsocksConfig({
+      const config = new Config({
         host: '192.168.100.1',
         port: '8888',
         method: 'bf-cfb',
@@ -191,12 +204,12 @@ describe('ShadowsocksConfig', () => {
     });
 
     it('throws when parsing empty input', () => {
-      expect(() => ShadowsocksURI.parse('')).to.throw(InvalidShadowsocksURI);
+      expect(() => ShadowsocksURI.parse('')).to.throw(InvalidURI);
     });
 
     it('throws when parsing invalid input', () => {
-      expect(() => ShadowsocksURI.parse('not a URI')).to.throw(InvalidShadowsocksURI);
-      expect(() => ShadowsocksURI.parse('ss://not-base64')).to.throw(InvalidShadowsocksURI);
+      expect(() => ShadowsocksURI.parse('not a URI')).to.throw(InvalidURI);
+      expect(() => ShadowsocksURI.parse('ss://not-base64')).to.throw(InvalidURI);
     });
   });
 });

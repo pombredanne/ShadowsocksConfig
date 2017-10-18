@@ -8,15 +8,17 @@ for example usage.
 
 ## Development
 
+First [install yarn](https://yarnpkg.com/en/docs/install-ci).
+
 The Gulpfile itself is written in TypeScript.
-You can run the npm script `gulp` to compile and run it on the fly:
+You can run the package script `gulp` to compile and run it on the fly:
 
 ```sh
-npm run gulp
+yarn run gulp
 ```
 
 ### Unit Tests
 
 ```sh
-npm run test
+yarn run test
 ```
