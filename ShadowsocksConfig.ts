@@ -1,7 +1,12 @@
-import { decode as b64Decode, encode as b64Encode } from 'base-64';
+/// <reference types="node" />
+
+declare var isNode: boolean;
+
+const b64Encode = isNode ? require('base-64').encode : btoa;
+const b64Decode = isNode ? require('base-64').decode : atob;
+const URL = isNode ? require('url').URL : window.URL;
 
 // Node compatibility - allows running mocha tests:
-try { URL; } catch (_) { (global as any).URL = require('url').URL; }
 
 // Custom errors
 export class ShadowsocksConfigError extends Error {
@@ -122,6 +127,8 @@ export class Password extends ConfigData {
 }
 
 export class Tag extends ConfigData {
+  public pattern = /^[A-z0-9-]+$/;
+
   constructor(data: string) {
     super(data);
   }
@@ -300,4 +307,8 @@ export class Sip002URI extends ShadowsocksURI {
     const hash = ShadowsocksURI.getHash(this);
     return `ss://${b64EncodedUserInfo}@${host}:${port}/${queryString}${hash}`;
   }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports
 }
