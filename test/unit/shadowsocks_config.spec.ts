@@ -171,7 +171,7 @@ describe('shadowsocks_config', () => {
 
   describe('URI parser', () => {
 
-    it('can parse a valid SIP002 URI with no plugin param', () => {
+    it('can parse a valid SIP002 URI with IPv4 host', () => {
       const input = 'ss://YWVzLTEyOC1nY206dGVzdA==@192.168.100.1:8888#Foo%20Bar';
       const parseResult = ShadowsocksURI.parse(input);
       expect(parseResult.method).to.equal('aes-128-gcm');
@@ -179,6 +179,15 @@ describe('shadowsocks_config', () => {
       expect(parseResult.host).to.equal('192.168.100.1');
       expect(parseResult.port).to.equal('8888');
       expect(parseResult.tag).to.equal('Foo Bar');
+    });
+
+    it('can parse a valid SIP002 URI with IPv6 host', () => {
+      const input = 'ss://YWVzLTEyOC1nY206dGVzdA==@[2001:0:ce49:7601:e866:efff:62c3:fffe]:8888';
+      const parseResult = ShadowsocksURI.parse(input);
+      expect(parseResult.method).to.equal('aes-128-gcm');
+      expect(parseResult.password).to.equal('test');
+      expect(parseResult.host).to.equal('2001:0:ce49:7601:e866:efff:62c3:fffe');
+      expect(parseResult.port).to.equal('8888');
     });
 
     it('can parse a valid SIP002 URI with a plugin param', () => {
@@ -193,7 +202,7 @@ describe('shadowsocks_config', () => {
       expect((parseResult as Sip002URI).plugin).to.equal('obfs-local;obfs=http');
     });
 
-    it('can parse a valid legacy base64 URI', () => {
+    it('can parse a valid legacy base64 URI with IPv4 host', () => {
       const input = 'ss://YmYtY2ZiOnRlc3RAMTkyLjE2OC4xMDAuMTo4ODg4#Foo%20Bar';
       const parseResult = ShadowsocksURI.parse(input);
       expect(parseResult.method).to.equal('bf-cfb');
@@ -201,6 +210,15 @@ describe('shadowsocks_config', () => {
       expect(parseResult.host).to.equal('192.168.100.1');
       expect(parseResult.port).to.equal('8888');
       expect(parseResult.tag).to.equal('Foo Bar');
+    });
+
+    it('can parse a valid legacy base64 URI with IPv6 host', () => {
+      const input = 'ss://YmYtY2ZiOnRlc3RAWzIwMDE6MDpjZTQ5Ojc2MDE6ZTg2NjplZmZmOjYyYzM6ZmZmZV06ODg4OA';
+      const parseResult = ShadowsocksURI.parse(input);
+      expect(parseResult.host).to.equal('2001:0:ce49:7601:e866:efff:62c3:fffe');
+      expect(parseResult.port).to.equal('8888');
+      expect(parseResult.method).to.equal('bf-cfb');
+      expect(parseResult.password).to.equal('test');
     });
 
     it('throws when parsing empty input', () => {

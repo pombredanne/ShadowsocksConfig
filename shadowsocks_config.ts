@@ -43,40 +43,48 @@ export class ConfigField {
   }
 }
 
-function throwErrorForInvalidField(name: string, value: any) {
-  throw new InvalidConfigField(`Invalid ${name}: ${value}`);
+function throwErrorForInvalidField(name: string, value: any, reason?: string) {
+  throw new InvalidConfigField(`Invalid ${name}: ${value} ${reason || ''}`);
 }
 
 export class Host extends ConfigField {
+  public static IPV4_PATTERN = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+  public static IPV6_PATTERN = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
+  public isIPv6: boolean;
+
   constructor(host: Host | string) {
     if (host instanceof Host) {
       host = host.data;
     }
-    try {
-      // TODO: use https://www.npmjs.com/package/ip-address to restrict to only IP addresses
-      const urlParserResult = new URL(`http://${host}/`);
-      super(urlParserResult.hostname);
-    } catch (_) {
-      throwErrorForInvalidField('host', host);
+    super(host);
+    this.isIPv6 = Host.IPV6_PATTERN.test(host);
+    if (!this.isIPv6 && !Host.IPV4_PATTERN.test(host)) {
+      throwErrorForInvalidField('host', host, 'IPv4 or IPv6 address required');
     }
   }
 }
 
-// Port validation/normalization is built on top of URL for safety and efficiency.
-// NOTE: Port data is stored as a string, not a number, as in a URL instance.
 export class Port extends ConfigField {
+  public static PATTERN = /^[0-9]{1,5}$/;
+
   constructor(port: Port | string | number) {
     if (port instanceof Port) {
       port = port.data;
     }
-    const throwError = () => throwErrorForInvalidField('port', port);
-    if (port === '') throwError();
-    try {
-      const urlParserResult = new URL(`http://0.0.0.0:${port}/`);
-      super(urlParserResult.port);
-    } catch (_) {
-      throwError();
+    if (typeof port === 'number') {
+      // Could be negative or floating point, so stringify. Regex test below will catch it.
+      port = port.toString();
     }
+    if (!Port.PATTERN.test(port)) {
+      throwErrorForInvalidField('port', port);
+    }
+    // Could exceed the maximum port number, so convert to Number to check. Could also have leading
+    // zeros. Converting to Number drops those, so we get normalization for free. :)
+    port = Number(port);
+    if (port > 65535) {
+      throwErrorForInvalidField('port', port);
+    }
+    super(port.toString());
   }
 }
 
@@ -209,6 +217,11 @@ export abstract class ShadowsocksURI extends Config {
 
   abstract toString(): string;
 
+  uriFormattedHost() {
+    const host = new Host(this.host);
+    return host.isIPv6 ? `[${host.data}]` : host.data;
+  }
+
   static validateProtocol(uri: string) {
     if (!uri.startsWith('ss://')) {
       throw new InvalidURI(`URI must start with "ss://": ${uri}`);
@@ -242,7 +255,7 @@ export abstract class ShadowsocksURI extends Config {
 
 // Ref: https://shadowsocks.org/en/config/quick-guide.html
 export class LegacyBase64URI extends ShadowsocksURI {
-  b64EncodedData: string;
+  private b64EncodedData: string;
 
   constructor(config: UnsafeConfig) {
     super(new Config(config));
@@ -282,11 +295,19 @@ export class LegacyBase64URI extends ShadowsocksURI {
     const password = new Password(passwordString);
     const hostStartIndex = atSignIndex + 1;
     const hostAndPort = b64DecodedData.substring(hostStartIndex);
-    const hostEndIndex = hostAndPort.indexOf(':');
+    const hostEndIndex = hostAndPort.lastIndexOf(':');
     if (hostEndIndex === -1) {
       throw new InvalidURI(`Missing port part: ${hostAndPort}`);
     }
-    const host = new Host(hostAndPort.substring(0, hostEndIndex));
+    const uriFormattedHost = hostAndPort.substring(0, hostEndIndex);
+    let host: Host;
+    try {
+      host = new Host(uriFormattedHost);
+    } catch (_) {
+      // Could be IPv6 host formatted with surrounding brackets, so try stripping first and last
+      // characters. If this throws, give up and let the exception propagate.
+      host = new Host(uriFormattedHost.substring(1, uriFormattedHost.length - 1));
+    }
     const portStartIndex = hostEndIndex + 1;
     const portString = hostAndPort.substring(portStartIndex);
     const port = new Port(portString);
@@ -327,11 +348,17 @@ export class Sip002URI extends ShadowsocksURI {
 
   static parse(uri: string) {
     ShadowsocksURI.validateProtocol(uri);
-    // replace "ss" with "http" so URL built-in parser parses it correctly.
+    // Can use built-in URL parser for expedience. Just have to replace "ss" with "http" to ensure
+    // correct results.
     const inputForUrlParser = `http${uri.substring(2)}`;
     // The built-in URL parser throws as desired when given URIs with invalid syntax.
     const urlParserResult = new URL(inputForUrlParser);
-    const host = new Host(urlParserResult.hostname);
+    const uriFormattedHost = urlParserResult.hostname;
+    // URI-formatted IPv6 hostnames have surrounding brackets.
+    const last = uriFormattedHost.length - 1;
+    const brackets = uriFormattedHost[0] === '[' && uriFormattedHost[last] === ']';
+    const hostString = brackets ? uriFormattedHost.substring(1, last) : uriFormattedHost;
+    const host = new Host(hostString);
     const port = new Port(urlParserResult.port);
     const tag = new Tag(decodeURIComponent(urlParserResult.hash.substring(1)));
     const b64EncodedUserInfo = urlParserResult.username.replace(/%3D/g, '=');
@@ -357,6 +384,7 @@ export class Sip002URI extends ShadowsocksURI {
     const { b64EncodedUserInfo, host, port, plugin, tag } = this;
     const queryString = plugin ? `?plugin=${plugin}` : '';
     const hash = ShadowsocksURI.getHash(this);
-    return `ss://${b64EncodedUserInfo}@${host}:${port}/${queryString}${hash}`;
+    const uriHost = this.uriFormattedHost();
+    return `ss://${b64EncodedUserInfo}@${uriHost}:${port}/${queryString}${hash}`;
   }
 }
