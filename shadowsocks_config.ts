@@ -25,7 +25,6 @@ export class InvalidURI extends ShadowsocksConfigError {
     super(message);
   }
 }
-// End custom errors
 
 // Self-validating/normalizing config data types subclass this ConfigField class.
 // Constructors take a string, validate/normalize/accept if valid, or throw otherwise.
@@ -52,12 +51,12 @@ export class Host extends ConfigField {
   public static IPV6_PATTERN = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
   public isIPv6: boolean;
 
-  constructor(host: Host | string) {
+  constructor(host: Host | string, allowIPv6 = true) {
     if (host instanceof Host) {
       host = host.data;
     }
     super(host);
-    this.isIPv6 = Host.IPV6_PATTERN.test(host);
+    this.isIPv6 = allowIPv6 && Host.IPV6_PATTERN.test(host);
     if (!this.isIPv6 && !Host.IPV4_PATTERN.test(host)) {
       throwErrorForInvalidField('host', host, 'IPv4 or IPv6 address required');
     }
@@ -268,7 +267,7 @@ export class LegacyBase64URI extends ShadowsocksURI {
         b64EncodedData.substring(0, dataLength - paddingLength);
   }
 
-  static parse(uri: string) {
+  static parse(uri: string, allowIPv6Host = true) {
     ShadowsocksURI.validateProtocol(uri);
     const hashIndex = uri.indexOf('#');
     let b64EndIndex = hashIndex;
@@ -302,9 +301,12 @@ export class LegacyBase64URI extends ShadowsocksURI {
     const uriFormattedHost = hostAndPort.substring(0, hostEndIndex);
     let host: Host;
     try {
-      host = new Host(uriFormattedHost);
-    } catch (_) {
-      // Could be IPv6 host formatted with surrounding brackets, so try stripping first and last
+      host = new Host(uriFormattedHost, allowIPv6Host);
+    } catch (e) {
+      if (!allowIPv6Host) {
+        throw e;
+      }
+      // IPv6 hosts are surrounded in brackets, so try stripping first and last
       // characters. If this throws, give up and let the exception propagate.
       host = new Host(uriFormattedHost.substring(1, uriFormattedHost.length - 1));
     }
@@ -346,7 +348,7 @@ export class Sip002URI extends ShadowsocksURI {
     return this.plugin_.toString();
   }
 
-  static parse(uri: string) {
+  static parse(uri: string, allowIPv6Host = true) {
     ShadowsocksURI.validateProtocol(uri);
     // Can use built-in URL parser for expedience. Just have to replace "ss" with "http" to ensure
     // correct results.
@@ -358,7 +360,7 @@ export class Sip002URI extends ShadowsocksURI {
     const last = uriFormattedHost.length - 1;
     const brackets = uriFormattedHost[0] === '[' && uriFormattedHost[last] === ']';
     const hostString = brackets ? uriFormattedHost.substring(1, last) : uriFormattedHost;
-    const host = new Host(hostString);
+    const host = new Host(hostString, allowIPv6Host);
     const port = new Port(urlParserResult.port);
     const tag = new Tag(decodeURIComponent(urlParserResult.hash.substring(1)));
     const b64EncodedUserInfo = urlParserResult.username.replace(/%3D/g, '=');
