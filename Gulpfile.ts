@@ -4,6 +4,7 @@ const gulp = require('gulp');
 const runSequence = require('run-sequence');
 const gulpLoadPlugins = require('gulp-load-plugins');
 const MochaLib = require('mocha');
+const map = require('map-stream');
 
 const plugins = gulpLoadPlugins();
 
@@ -85,7 +86,7 @@ gulp.task('test:unit', () => {
   return status.report(Statuses.pending)
   .then(() => {
     return new Promise((resolve) => {
-      const mocha = new Mocha({reporter: 'list'});
+      const mocha = new MochaLib({reporter: 'list'});
       mocha.addFile('test/unit/mocha-runner.js');
       mocha.run((errorCount: number) => resolve(errorCount))
     });
@@ -103,6 +104,36 @@ gulp.task('test:unit', () => {
   });
 
 });
+
+
+gulp.task('tslint', () => {
+
+  let errorCount = 0;
+  const status = githubCommit.getStatus('TypeScript Code Style');
+  return status.report(Statuses.pending)
+    .then(() => {
+      return gulp.src('*.ts')
+        .pipe(plugins.tslint({
+          configuration: 'tslint.json',
+          formatter: 'prose'
+        }))
+        .pipe(map(function(file, done) {
+          errorCount += file.tslint.errorCount;
+          done(null, file);
+        }))
+        .pipe(plugins.tslint.report({
+          emitError: false
+        }));
+    })
+    .then(() => {
+      const hasErrors = (errorCount > 0);
+      const state = hasErrors ? Statuses.failure : Statuses.success;
+      const description = hasErrors ? `failed with ${errorCount} errors` : '';
+      return status.report(state, description);
+    });
+
+});
+
 
 gulp.task('test', (done: any) => {
   runSequence(
