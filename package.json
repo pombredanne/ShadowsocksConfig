@@ -4,7 +4,7 @@
   "description": "ShadowsocksConfig",
   "main": "ShadowsocksConfig",
   "scripts": {
-    "gulp": "./node_modules/.bin/tsc -t ES6 Gulpfile.ts && gulp",
+    "gulp": "./node_modules/.bin/tsc -t ES6 -m commonjs Gulpfile.ts && gulp",
     "build": "yarn run gulp build",
     "test": "yarn run gulp test"
   },
