@@ -22,3 +22,9 @@ yarn run gulp
 ```sh
 yarn run test
 ```
+
+### TypeScript Linting
+
+```sh
+yarn run gulp tslint
+```
