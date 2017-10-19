@@ -39,3 +39,8 @@ before_install:
 
 script:
   - $YARN run gulp -- travis --GITHUB_TOKEN="$GITHUB_BOT_TOKEN" --COMMIT="$TRAVIS_COMMIT"
+
+env:
+  global:
+    - YARN="/usr/bin/yarn"
+    - secure: "am9c+sNO6TLKE6InFnByGJmV3Wvt5q4spbGhQMM0rwHiOPjm8/UAfNEjJ+hNeuCryEvbHr8wvLxUEp7avm1TBHQz2ScxVH5hhryX6LyLhaLuMkUbOIrUgIjweH/5u064/8kdsGD0DCfzDrATeZw/Sf+vI+qlxniS8ah6Lcc4T11bKW1lO+X+dbR+h/+0sfV4KuvDVm0TTNJ8+yYV8Zwn0PxJuG9uaOQUPoTT/znJfxwNdcmOf3zX7NwZPfCNdTwoy33Synr4u75x146PTBgTkWm88DK423rcgdYWoWoPlJULKjBizx20BJ3q340lApcgybIJUjPzXTLYdT/bF2dPM9MiW+Juxfw4c+DEnoHg+YpIWUDG9xjJiIBAXKXsK/T7sWmOOQZ6amh/z7x9zGVOC9PIuLXy02xQpHbk1YbakcEYIdLhmHxuk6As6ELCx9DZhHdBlZecUuUMAD4AQCC0wY9gEealkDkRGEn48jeSbO3JMJZ7gUrSjxy2yow++2vfJWrcxP5xRcT2mxY5VLvV/bRLMO2nsM/PfO1/XdLc52vaxxdUFvRzm0IcC8K7/HPSfD0jz0wavZjEMG7FzpErPXKOUPLEiHXe7QkHbvQ9Glpfkf3cIX0TdMEUb9MS/UeYypIiwCLSbvL3z/uqQznvhO0Y5SYBkO9HG/ltdP7QkNc="
