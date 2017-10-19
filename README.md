@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/uProxy/ShadowsocksConfig.svg?branch=master)](https://travis-ci.org/uProxy/ShadowsocksConfig)
 
 
-See [test/unit/ShadowsocksConfig.spec.ts](test/unit/ShadowsocksConfig.spec.ts)
+See [test/unit/shadowsocks_config.spec.ts](test/unit/shadowsocks_config.spec.ts)
 for example usage.
 
 ## Development

@@ -171,6 +171,10 @@ describe('shadowsocks_config', () => {
 
   describe('URI parser', () => {
 
+    it('exposes a PROTOCOL property with value "ss:"', () => {
+      expect(ShadowsocksURI.PROTOCOL).to.equal('ss:');
+    });
+
     it('can parse a valid SIP002 URI with IPv4 host', () => {
       const input = 'ss://YWVzLTEyOC1nY206dGVzdA==@192.168.100.1:8888#Foo%20Bar';
       const parseResult = ShadowsocksURI.parse(input);

@@ -91,7 +91,7 @@ export class Port extends ConfigField {
 // A method value must exactly match an element in the set of known ciphers.
 // ref: https://github.com/shadowsocks/shadowsocks-libev/blob/10a2d3e3/completions/bash/ss-redir#L5
 export class Method extends ConfigField {
-  private static METHODS = new Set([
+  protected static METHODS = new Set([
     'rc4-md5',
     'aes-128-gcm',
     'aes-192-gcm',
@@ -151,19 +151,19 @@ export interface UnsafeConfig {
   method?: Method | string;
   password?: Password | string;
   tag?: Tag | string;
-  plugin?: Plugin | string;
+  plugin?: Plugin | string;  // SIP003 plugin, for applications that support it.
 }
 
 export class Config implements UnsafeConfig {
-  private host_: Host;
-  private port_: Port;
-  private method_: Method;
-  private password_: Password;
-  private tag_: Tag;
+  protected host_: Host;
+  protected port_: Port;
+  protected method_: Method;
+  protected password_: Password;
+  protected tag_: Tag;
 
   constructor(config: UnsafeConfig) {
-    // Cast to (safe) Config to avoid strictNullChecks errors.
-    // The setters below throw when required values are missing.
+    // Cast to Config to avoid strictNullChecks errors. The setters that called by the below
+    // throw when required values are missing, so we're protected from undefined fields.
     this.host = (config as Config).host;
     this.port = (config as Config).port;
     this.method = (config as Config).method;
@@ -213,6 +213,8 @@ export class Config implements UnsafeConfig {
 }
 
 export abstract class ShadowsocksURI extends Config {
+  public static readonly PROTOCOL = 'ss:';
+
   constructor(config: UnsafeConfig) {
     super(new Config(config));
   }
@@ -220,13 +222,13 @@ export abstract class ShadowsocksURI extends Config {
   abstract toString(): string;
 
   uriFormattedHost() {
-    const host = new Host(this.host);
-    return host.isIPv6 ? `[${host.data}]` : host.data;
+    const host = this.host_.data;
+    return this.host_.isIPv6 ? `[${host}]` : host;
   }
 
   static validateProtocol(uri: string) {
-    if (!uri.startsWith('ss://')) {
-      throw new InvalidURI(`URI must start with "ss://": ${uri}`);
+    if (!uri.startsWith(ShadowsocksURI.PROTOCOL)) {
+      throw new InvalidURI(`URI must start with "${ShadowsocksURI.PROTOCOL}": ${uri}`);
     }
   }
 
@@ -258,7 +260,7 @@ export abstract class ShadowsocksURI extends Config {
 
 // Ref: https://shadowsocks.org/en/config/quick-guide.html
 export class LegacyBase64URI extends ShadowsocksURI {
-  private b64EncodedData: string;
+  protected b64EncodedData: string;
 
   constructor(config: UnsafeConfig) {
     super(new Config(config));
@@ -332,7 +334,7 @@ export class LegacyBase64URI extends ShadowsocksURI {
 //         - https://caniuse.com/#feat=urlsearchparams
 export class Sip002URI extends ShadowsocksURI {
   b64EncodedUserInfo: string;
-  private plugin_: Plugin;
+  protected plugin_: Plugin;
 
   constructor(config: UnsafeConfig) {
     super(new Config(config));
