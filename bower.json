@@ -1,11 +1,11 @@
 {
-  "name": "ShadowsocksConfig",
+  "name": "shadowsocks-config",
   "homepage": "https://github.com/uProxy/ShadowsocksConfig",
   "authors": [
     "jab <jab@users.noreply.github.com>"
   ],
   "description": "",
-  "main": "ShadowsocksConfig.js",
+  "main": "shadowsocks_config.js",
   "license": "Apache-2.0",
   "ignore": [
     "**/.*",
@@ -14,8 +14,11 @@
     "test",
     "tests"
   ],
-  "dependencies": {
-    "base-64": "^0.1.0",
+  "devDepenndencies": {
     "web-component-tester": "^6.3.0"
-  }
+  },
+  "keywords": [
+    "WebComponent",
+    "Shadowsocks"
+  ]
 }
