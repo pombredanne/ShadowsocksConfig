@@ -162,11 +162,13 @@ export class Config implements UnsafeConfig {
   private tag_: Tag;
 
   constructor(config: UnsafeConfig) {
-    this.host = config.host;
-    this.port = config.port;
-    this.method = config.method;
-    this.password = config.password;
-    this.tag = config.tag;
+    // Cast to (safe) Config to avoid strictNullChecks errors.
+    // The setters below throw when required values are missing.
+    this.host = (config as Config).host;
+    this.port = (config as Config).port;
+    this.method = (config as Config).method;
+    this.password = (config as Config).password;
+    this.tag = (config as Config).tag;
   }
 
   set host(host: Host | string) {
@@ -234,14 +236,15 @@ export abstract class ShadowsocksURI extends Config {
   }
 
   static parse(uri: string): UnsafeConfig {
-    let error: Error;
+    let maybeError: (Error | undefined);
     for (const UriType of [LegacyBase64URI, Sip002URI]) {
       try {
         return UriType.parse(uri);
       } catch (e) {
-        error = error || e;
+        maybeError = maybeError || e;
       }
     }
+    let error = maybeError as Error;
     if (!(error instanceof InvalidURI)) {
       const originalErrorName = (error as Error).name || '(Unnamed Error)';
       const originalErrorMessage = (error as Error).message || '(no error message provided)';
@@ -372,7 +375,7 @@ export class Sip002URI extends ShadowsocksURI {
     const method = new Method(methodString);
     const passwordString = b64DecodedUserInfo.substring(colonIdx + 1);
     const password = new Password(passwordString);
-    let plugin: Plugin;
+    let plugin: Plugin | undefined;
     if (urlParserResult.searchParams) {
       const pluginString = urlParserResult.searchParams.get('plugin');
       plugin = pluginString ? new Plugin(pluginString) : undefined;
