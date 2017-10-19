@@ -14,6 +14,7 @@ const githubRepository = new Repository(
   "ShadowsocksConfig",
   plugins.util.env.GITHUB_TOKEN,
 );
+console.log('Reporting on commit:', plugins.util.env.COMMIT);
 const githubCommit = githubRepository.commit(plugins.util.env.COMMIT);
 // ----------------------------------------------------------------------------
 
@@ -33,9 +34,7 @@ gulp.task('build:lib', () => {
   const tsProject = plugins.typescript.createProject('tsconfig.json');
 
   return gulp.src([
-      '*.ts',
-      '!Gulpfile.ts',
-      '!*.d.ts'
+      'shadowsocks_config.ts',
     ])
     // Handle source maps manually rather than having tsc generate them because we
     // modify the output of tsc.
