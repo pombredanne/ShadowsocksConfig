@@ -17,7 +17,6 @@ node_js:
   - 8
 env:
   global:
-    - YARN="/usr/bin/yarn"
     - YARN_VERSION="1.2.1"
     - YARN_CACHE_FOLDER="${HOME}/.yarn-cache"
     - secure: "iqAxH1egyFWJ38UTZ5+7wY909Cjm/lGbofY+plGm6zD+EFxEisaekXLmEhtuDpuiZmJDw2iWKtJDeOKF9jPkxqyiHbIZ1KNzwghm1iTx1UX9Pryp5W+D/MZu9BWaqaLWsDlxj4f2fSOn/DQmc0DcSOE4i36JCCgqehz9bnYlgK45KXRMYf3tRcJ160kA8MBhSFqYXqkPNa1vkgii4sacAu620Hb7It1c/9dHu4M2vVwIZTacFp6f4djeuJfWd0yRteTowfVrmduQ9bs0INPaeIfIGSdb/N1GzDfapulHmE/v+3k+BkUuiEGWNS5z8q+koH5TaTN0pRBJl2X/eF74n4xIY2g6Jmnh8yJGdfMwvOhOxZK3vlnSPQp8rWz6x0SQPOYQWW2kCdOMycD85teVuAi9Zr55K937Bg+0KzrgFrHamXgz8jiZKitacv8kL2ZtchuSXK7EcaFNVeYCPXSV4Ccr8s75+oqg5cyv13ZEtBhjlru+0IPOpXKAh9OZ7yWdl9yqHcmN4Z0cYSdSGmkh9ybERudNM3AtWcwCcCSnZ2TKWFh7tGXWujHRBdTZQr1wBmavMERUeTWXMD11H+JCJUsOvvZMGgi0MbvYvGMxKNp1MB1J52AU5l5+oQP6XCxClCv7pks2tXlB1VcpGKBsbyVg0LOrMtDS3VAAPlaQWLk="
@@ -39,4 +38,4 @@ before_install:
     fi
 
 script:
-  - $YARN run gulp -- travis --GITHUB_TOKEN="$GITHUB_BOT_TOKEN" --COMMIT="$TRAVIS_COMMIT"
+  - yarn run gulp -- travis --GITHUB_TOKEN="$GITHUB_BOT_TOKEN" --COMMIT="$TRAVIS_COMMIT"
