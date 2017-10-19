@@ -7,6 +7,16 @@ const MochaLib = require('mocha');
 
 const plugins = gulpLoadPlugins();
 
+// ----------------------------- GitHub Statuses ------------------------------
+import { Repository, Statuses, StatusOptions } from "commit-status-reporter";
+const githubRepository = new Repository(
+  "uProxy",
+  "ShadowsocksConfig",
+  plugins.util.env.GITHUB_TOKEN,
+);
+const githubCommit = githubRepository.commit(plugins.util.env.COMMIT);
+// ----------------------------------------------------------------------------
+
 const moduleCompatibilityHeader = `(function iife() {
   const platformExportObj = (function detectPlatformExportObj() {
     if (typeof module !== 'undefined' && module.exports) {
@@ -71,11 +81,28 @@ gulp.task('build', (done: any) => {
 });
 
 gulp.task('test:unit', () => {
-  return new Promise<number>((resolve) => {
-    const runner = new MochaLib({reporter: 'list'});
-    runner.addFile('test/unit/mocha-runner.js');
-    runner.run((failureCount: number) => resolve(failureCount))
+  
+  const status = githubCommit.getStatus("Unit Tests");
+  return status.report(Statuses.pending)
+  .then(() => {
+    return new Promise((resolve) => {
+      const mocha = new Mocha({reporter: 'list'});
+      mocha.addFile('test/unit/mocha-runner.js');
+      mocha.run((errorCount: number) => resolve(errorCount))
+    });
+  })
+  .then((errorCount: number) => {
+    const hasErrors = (errorCount > 0);
+    const state = hasErrors ? Statuses.failure : Statuses.success;
+    let description;
+    if (hasErrors) {
+      description = `${errorCount} failure${errorCount === 1 ? '' : 's'}`;
+    } else {
+      description = 'All tests passed, huzzah!';
+    }
+    return status.report(Statuses.success)
   });
+
 });
 
 gulp.task('test', (done: any) => {
@@ -87,7 +114,6 @@ gulp.task('test', (done: any) => {
   );
 });
 
-gulp.task('default', [
-  'build:lib',
-]);
+gulp.task('default', ['build:lib']);
 
+gulp.task('travis', ['test']);
