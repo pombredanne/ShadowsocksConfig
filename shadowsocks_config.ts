@@ -232,12 +232,12 @@ export abstract class ShadowsocksURI extends Config {
     }
   }
 
-  static getHash(config: UnsafeConfig) {
+  static getHash(config: Config) {
     const tag = config.tag instanceof Tag ? config.tag.data : config.tag;
     return tag ? `#${encodeURIComponent(tag)}` : '';
   }
 
-  static parse(uri: string): UnsafeConfig {
+  static parse(uri: string): Config {
     let maybeError: (Error | undefined);
     for (const UriType of [LegacyBase64URI, Sip002URI]) {
       try {
