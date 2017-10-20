@@ -11,6 +11,29 @@ import {
 
 describe('shadowsocks_config', () => {
 
+  describe('Config API', () => {
+    it('has expected shape', () => {
+      const config = new Config({
+        host: '192.168.100.1',
+        port: 8888,
+        method: 'chacha20',
+        password: 'P@$$W0RD!',
+      });
+      const host: string = config.host;
+      const port: string = config.port;
+      const method: string = config.method;
+      const password: string = config.password;
+      const tag: string = config.tag;
+      const plugin: string = config.plugin;
+      expect(host).to.equal('192.168.100.1');
+      expect(port).to.equal('8888');
+      expect(method).to.equal('chacha20');
+      expect(password).to.equal('P@$$W0RD!');
+      expect(tag).to.equal('');
+      expect(plugin).to.equal('');
+    });
+  });
+
   describe('field validation', () => {
 
     it('only accepts hosts that are valid IP addresses', () => {
@@ -33,6 +56,8 @@ describe('shadowsocks_config', () => {
     it('accepts valid ports', () => {
       expect(new Port('8388').toString()).to.equal('8388');
       expect(new Port('443').toString()).to.equal('443');
+      expect(new Port(8388).toString()).to.equal('8388');
+      expect(new Port(443).toString()).to.equal('443');
     });
 
     it('throws on empty port', () => {
@@ -43,6 +68,11 @@ describe('shadowsocks_config', () => {
       expect(() => new Port('foo')).to.throw(InvalidConfigField);
       expect(() => new Port('-123')).to.throw(InvalidConfigField);
       expect(() => new Port('123.4')).to.throw(InvalidConfigField);
+      expect(() => new Port('123.4')).to.throw(InvalidConfigField);
+      expect(() => new Port(-123)).to.throw(InvalidConfigField);
+      expect(() => new Port(123.4)).to.throw(InvalidConfigField);
+      // Maximum port is 65535.
+      expect(() => new Port(65536)).to.throw(InvalidConfigField);
     });
 
     it('normalizes non-normalized but valid port', () => {
