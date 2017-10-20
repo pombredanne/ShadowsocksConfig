@@ -237,7 +237,7 @@ export abstract class ShadowsocksURI extends Config {
     return tag ? `#${encodeURIComponent(tag)}` : '';
   }
 
-  static parse(uri: string): Config {
+  static parse(uri: string): ShadowsocksURI {
     let maybeError: (Error | undefined);
     for (const UriType of [LegacyBase64URI, Sip002URI]) {
       try {
