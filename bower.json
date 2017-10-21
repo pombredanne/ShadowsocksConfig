@@ -1,5 +1,6 @@
 {
   "name": "shadowsocks-config",
+  "version": "0.0.1",
   "homepage": "https://github.com/uProxy/ShadowsocksConfig",
   "authors": [
     "jab <jab@users.noreply.github.com>"
