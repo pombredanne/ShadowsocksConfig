@@ -20,19 +20,20 @@ export class InvalidURI extends ShadowsocksConfigError {}
 
 // Self-validating/normalizing config data types implement this ValidatedConfigField interface.
 // Constructors take some data, validate, normalize, and store if valid, or throw otherwise.
-export interface ValidatedConfigField {};
+export abstract class ValidatedConfigField {};
 
 function throwErrorForInvalidField(name: string, value: any, reason?: string) {
   throw new InvalidConfigField(`Invalid ${name}: ${value} ${reason || ''}`);
 }
 
-export class Host implements ValidatedConfigField {
+export class Host extends ValidatedConfigField {
   public static IPV4_PATTERN = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
   public static IPV6_PATTERN = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
   public readonly data: string;
   public readonly isIPv6: boolean;
 
   constructor(host: Host | string) {
+    super();
     if (host instanceof Host) {
       host = host.data;
     }
@@ -44,11 +45,12 @@ export class Host implements ValidatedConfigField {
   }
 }
 
-export class Port implements ValidatedConfigField {
+export class Port extends ValidatedConfigField {
   public static readonly PATTERN = /^[0-9]{1,5}$/;
   public readonly data: number;
 
   constructor(port: Port | string | number) {
+    super();
     if (port instanceof Port) {
       port = port.data;
     }
@@ -92,9 +94,10 @@ export const METHODS = new Set([
   'chacha20-ietf',
 ]);
 
-export class Method implements ValidatedConfigField {
+export class Method extends ValidatedConfigField {
   public readonly data: string;
   constructor(method: Method | string) {
+    super();
     if (method instanceof Method) {
       method = method.data;
     }
@@ -108,26 +111,29 @@ export class Method implements ValidatedConfigField {
 // Currently no sanitization is performed for Password, Tag, or Plugin. Client code is responsible
 // for sanitizing these values when received from untrusted input.
 // TODO: Document this in the README.
-export class Password implements ValidatedConfigField {
+export class Password extends ValidatedConfigField {
   public readonly data: string;
 
   constructor(password: Password | string) {
+    super();
     this.data = password instanceof Password ? password.data : password;
   }
 }
 
-export class Tag implements ValidatedConfigField {
+export class Tag extends ValidatedConfigField {
   public readonly data: string;
 
   constructor(tag: Tag | string = '') {
+    super();
     this.data = tag instanceof Tag ? tag.data : tag;
   }
 }
 
-export class Plugin implements ValidatedConfigField {
+export class Plugin extends ValidatedConfigField {
   public readonly data: string;
 
   constructor(plugin: Plugin | string = '') {
+    super();
     this.data = plugin instanceof Plugin ? plugin.data : plugin;
   }
 }
