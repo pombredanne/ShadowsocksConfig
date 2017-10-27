@@ -161,28 +161,24 @@ export function makeConfig(config: {[key: string]: any}): Config {
 }
 
 
-export abstract class ShadowsocksUri {
-  public static readonly PROTOCOL = 'ss:';
+export const ShadowsocksUri = {
+  PROTOCOL: 'ss:',
 
-  constructor(public readonly config: Config) {}
-
-  //abstract toString(): string;
-
-  static getUriFormattedHost(host: Host) {
+  getUriFormattedHost: (host: Host) => {
     return host.isIPv6 ? `[${host.data}]` : host.data;
-  }
+  },
 
-  static getHash(tag?: Tag) {
+  getHash: (tag?: Tag) => {
     return tag ? `#${encodeURIComponent(tag.data)}` : '';
-  }
+  },
 
-  static validateProtocol(uri: string) {
+  validateProtocol: (uri: string) => {
     if (!uri.startsWith(ShadowsocksUri.PROTOCOL)) {
       throw new InvalidUri(`URI must start with "${ShadowsocksUri.PROTOCOL}": ${uri}`);
     }
-  }
+  },
 
-  static parse(uri: string): Config {
+  parse: (uri: string): Config => {
     let error: Error | undefined;
     for (const UriType of [LegacyBase64Uri, Sip002Uri]) {
       try {
@@ -199,12 +195,12 @@ export abstract class ShadowsocksUri {
       error = new InvalidUri(newErrorMessage);
     }
     throw error;
-  }
-}
+  },
+};
 
 // Ref: https://shadowsocks.org/en/config/quick-guide.html
-export class LegacyBase64Uri extends ShadowsocksUri {
-  static parse(uri: string): Config {
+export const LegacyBase64Uri = {
+  parse: (uri: string): Config => {
     ShadowsocksUri.validateProtocol(uri);
     const hashIndex = uri.indexOf('#');
     let b64EndIndex = hashIndex;
@@ -248,9 +244,9 @@ export class LegacyBase64Uri extends ShadowsocksUri {
     const portString = hostAndPort.substring(portStartIndex);
     const port = new Port(portString);
     return {method, password, host, port, tag};
-  }
+  },
 
-  static stringify(config: Config) {
+  stringify: (config: Config) => {
     const {method, password, host, port} = config;
     const hash = ShadowsocksUri.getHash(config.tag);
     let b64EncodedData = b64Encode(`${method.data}:${password.data}@${host.data}:${port.data}`);
@@ -260,8 +256,8 @@ export class LegacyBase64Uri extends ShadowsocksUri {
     b64EncodedData = paddingLength === 0 ? b64EncodedData :
         b64EncodedData.substring(0, dataLength - paddingLength);
     return `ss://${b64EncodedData}${hash}`;
-  }
-}
+  },
+};
 
 // Ref: https://shadowsocks.org/en/spec/SIP002-URI-Scheme.html
 // NOTE: Currently the plugin query param is preserved on a best-effort basis. It is silently
@@ -269,8 +265,8 @@ export class LegacyBase64Uri extends ShadowsocksUri {
 //       Ref:
 //         - https://url.spec.whatwg.org/#url-class
 //         - https://caniuse.com/#feat=urlsearchparams
-export class Sip002Uri extends ShadowsocksUri {
-  static parse(uri: string): Config {
+export const Sip002Uri = {
+  parse: (uri: string): Config => {
     ShadowsocksUri.validateProtocol(uri);
     // Can use built-in URL parser for expedience. Just have to replace "ss" with "http" to ensure
     // correct results.
@@ -302,14 +298,14 @@ export class Sip002Uri extends ShadowsocksUri {
       plugin = pluginString ? new Plugin(pluginString) : undefined;
     }
     return {method, password, host, port, tag, plugin};
-  }
+  },
 
-  static stringify(config: Config) {
+  stringify: (config: Config) => {
     const {host, port, method, password} = config;
     const userInfo = b64Encode(`${method.data}:${password.data}`);
     const uriHost = ShadowsocksUri.getUriFormattedHost(host);
     const hash = ShadowsocksUri.getHash(config.tag);
     const queryString = config.plugin && config.plugin.data ? `?plugin=${config.plugin.data}` : '';
     return `ss://${userInfo}@${uriHost}:${port.data}/${queryString}${hash}`;
-  }
-}
+  },
+};
