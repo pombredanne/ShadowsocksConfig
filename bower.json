@@ -15,6 +15,9 @@
     "test",
     "tests"
   ],
+  "dependencies": {
+    "punycode": "^2.1.0"
+  },
   "devDepenndencies": {
     "web-component-tester": "^6.3.0"
   },

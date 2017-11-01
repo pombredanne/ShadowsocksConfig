@@ -31,17 +31,52 @@ describe('shadowsocks_config', () => {
 
   describe('field validation', () => {
 
-    it('only accepts hosts that are valid IP addresses', () => {
-      for (const valid of ['127.0.0.1', '2001:0:ce49:7601:e866:efff:62c3:fffe']) {
-        expect(new Host(valid).data).to.equal(valid);
+    it('accepts IPv4 address hosts', () => {
+      for (const valid of ['127.0.0.1', '8.8.8.8', '192.168.0.1']) {
+        const host = new Host(valid);
+        expect(host.data).to.equal(valid);
+        expect(host.isIPv4).to.be.true;
+        expect(host.isIPv6).to.be.false;
+        expect(host.isHostname).to.be.false;
       }
-      expect(() => new Host('localhost').data).to.throw(InvalidConfigField);
-      expect(() => new Host('example.com').data).to.throw(InvalidConfigField);
-      expect(() => new Host('-')).to.throw(InvalidConfigField);
-      expect(() => new Host('.')).to.throw(InvalidConfigField);
-      expect(() => new Host('....')).to.throw(InvalidConfigField);
-      expect(() => new Host('8675309')).to.throw(InvalidConfigField);
-      expect(() => new Host('-foo')).to.throw(InvalidConfigField);
+    });
+
+    it('accepts IPv6 address hosts', () => {
+      // IPv6 '::' shorthand is unsupported, so '::1' would fail here.
+      for (const valid of ['0:0:0:0:0:0:0:1', '2001:0:ce49:7601:e866:efff:62c3:fffe']) {
+        const host = new Host(valid);
+        expect(host.data).to.equal(valid);
+        expect(host.isIPv4).to.be.false;
+        expect(host.isIPv6).to.be.true;
+        expect(host.isHostname).to.be.false;
+      }
+    });
+
+    it('accepts valid hostname hosts', () => {
+      for (const valid of ['localhost', 'example.com']) {
+        const host = new Host(valid);
+        expect(host.data).to.equal(valid);
+        expect(host.isIPv4).to.be.false;
+        expect(host.isIPv6).to.be.false;
+        expect(host.isHostname).to.be.true;
+      }
+    });
+
+    it('accepts valid unicode hostnames and converts them to punycode', () => {
+      const testCases = [['mañana.com', 'xn--maana-pta.com'], ['☃-⌘.com', 'xn----dqo34k.com']];
+      for (const [input, converted] of testCases) {
+        const host = new Host(input);
+        expect(host.data).to.equal(converted);
+        expect(host.isIPv6).to.be.false;
+        expect(host.isIPv4).to.be.false;
+        expect(host.isHostname).to.be.true;
+      }
+    });
+
+    it('rejects invalid host values', () => {
+      for (const invalid of ['-', '-pwned', ';echo pwned', '.', '....']) {
+        expect(() => new Host(invalid)).to.throw(InvalidConfigField);
+      }
     });
 
     it('throws on empty host', () => {

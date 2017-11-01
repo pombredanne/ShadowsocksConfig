@@ -43,6 +43,7 @@
     "typescript": "^2.5.3"
   },
   "dependencies": {
-    "base-64": "^0.1.0"
+    "base-64": "^0.1.0",
+    "punycode": "^2.1.0"
   }
 }

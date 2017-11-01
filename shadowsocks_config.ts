@@ -1,9 +1,11 @@
 /// <reference types="node" />
+/// <reference path="./punycode.d.ts" />
 
 const isBrowser = typeof window !== 'undefined';
 const b64Encode = isBrowser ? btoa : require('base-64').encode;
 const b64Decode = isBrowser ? atob : require('base-64').decode;
 const URL = isBrowser ? window.URL : require('url').URL;
+const punycode = isBrowser ? (window as any).punycode : require('punycode');
 
 // Custom error base class
 export class ShadowsocksConfigError extends Error {
@@ -29,17 +31,26 @@ function throwErrorForInvalidField(name: string, value: any, reason?: string) {
 export class Host extends ValidatedConfigField {
   public static IPV4_PATTERN = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
   public static IPV6_PATTERN = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
+  public static HOSTNAME_PATTERN = /^[A-z0-9]+[A-z0-9_.-]*$/;
   public readonly data: string;
+  public readonly isIPv4: boolean;
   public readonly isIPv6: boolean;
+  public readonly isHostname: boolean;
 
   constructor(host: Host | string) {
     super();
+    if (!host) {
+      throwErrorForInvalidField('host', host);
+    }
     if (host instanceof Host) {
       host = host.data;
     }
-    this.isIPv6 = Host.IPV6_PATTERN.test(host);
-    if (!this.isIPv6 && !Host.IPV4_PATTERN.test(host)) {
-      throwErrorForInvalidField('host', host, 'IPv4 or IPv6 address required');
+    host = punycode.toASCII(host) as string;
+    this.isIPv4 = Host.IPV4_PATTERN.test(host);
+    this.isIPv6 = this.isIPv4 ? false : Host.IPV6_PATTERN.test(host);
+    this.isHostname = this.isIPv4 || this.isIPv6 ? false : Host.HOSTNAME_PATTERN.test(host);
+    if (!(this.isIPv4 || this.isIPv6 || this.isHostname)) {
+      throwErrorForInvalidField('host', host);
     }
     this.data = host;
   }
