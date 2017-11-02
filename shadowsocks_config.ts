@@ -1,6 +1,3 @@
-/// <reference types="node" />
-/// <reference path="./punycode.d.ts" />
-
 const isBrowser = typeof window !== 'undefined';
 const b64Encode = isBrowser ? btoa : require('base-64').encode;
 const b64Decode = isBrowser ? atob : require('base-64').decode;

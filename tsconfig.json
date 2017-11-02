@@ -13,10 +13,13 @@
     "removeComments": true,
     "strictNullChecks": true,
     "lib": [
-      "ES6",
-      "DOM"
+      "es6",
+      "dom"
     ]
   },
+  "include": [
+    "*.d.ts"
+  ],
   "exclude": [
     "Gulpfile.ts"
   ],
