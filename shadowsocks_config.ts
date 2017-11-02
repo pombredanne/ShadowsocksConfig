@@ -1,8 +1,10 @@
+/* tslint:disable */
 const isBrowser = typeof window !== 'undefined';
 const b64Encode = isBrowser ? btoa : require('base-64').encode;
 const b64Decode = isBrowser ? atob : require('base-64').decode;
 const URL = isBrowser ? window.URL : require('url').URL;
 const punycode = isBrowser ? (window as any).punycode : require('punycode');
+/* tslint:enable */
 
 // Custom error base class
 export class ShadowsocksConfigError extends Error {
@@ -19,9 +21,9 @@ export class InvalidUri extends ShadowsocksConfigError {}
 
 // Self-validating/normalizing config data types implement this ValidatedConfigField interface.
 // Constructors take some data, validate, normalize, and store if valid, or throw otherwise.
-export abstract class ValidatedConfigField {};
+export abstract class ValidatedConfigField {}
 
-function throwErrorForInvalidField(name: string, value: any, reason?: string) {
+function throwErrorForInvalidField(name: string, value: {}, reason?: string) {
   throw new InvalidConfigField(`Invalid ${name}: ${value} ${reason || ''}`);
 }
 
@@ -116,9 +118,6 @@ export class Method extends ValidatedConfigField {
   }
 }
 
-// Currently no sanitization is performed for Password or Tag. Client code is responsible
-// for sanitizing these values when received from untrusted input.
-// TODO: Document this in the README.
 export class Password extends ValidatedConfigField {
   public readonly data: string;
 
@@ -143,10 +142,11 @@ export interface Config {
   method: Method;
   password: Password;
   tag: Tag;
-  // For application-specific configuration extensions (e.g. SIP003 `plugin`)
+  // Any additional configuration (e.g. `timeout`, SIP003 `plugin`, etc.) may be stored here.
   extra: {[key: string]: string};
 }
 
+// tslint:disable-next-line:no-any
 export function makeConfig(input: {[key: string]: any}): Config {
   // Use "!" for the required fields to tell tsc that we handle undefined in the
   // ValidatedConfigFields we call; tsc can't figure that out otherwise.
@@ -167,7 +167,7 @@ export function makeConfig(input: {[key: string]: any}): Config {
   return config;
 }
 
-export const ShadowsocksUri = {
+export const SHADOWSOCKS_URI = {
   PROTOCOL: 'ss:',
 
   getUriFormattedHost: (host: Host) => {
@@ -179,16 +179,16 @@ export const ShadowsocksUri = {
   },
 
   validateProtocol: (uri: string) => {
-    if (!uri.startsWith(ShadowsocksUri.PROTOCOL)) {
-      throw new InvalidUri(`URI must start with "${ShadowsocksUri.PROTOCOL}": ${uri}`);
+    if (!uri.startsWith(SHADOWSOCKS_URI.PROTOCOL)) {
+      throw new InvalidUri(`URI must start with "${SHADOWSOCKS_URI.PROTOCOL}": ${uri}`);
     }
   },
 
   parse: (uri: string): Config => {
     let error: Error | undefined;
-    for (const UriType of [LegacyBase64Uri, Sip002Uri]) {
+    for (const uriType of [LEGACY_BASE64_URI, SIP002_URI]) {
       try {
-        return UriType.parse(uri);
+        return uriType.parse(uri);
       } catch (e) {
         error = error || e;
       }
@@ -205,9 +205,9 @@ export const ShadowsocksUri = {
 };
 
 // Ref: https://shadowsocks.org/en/config/quick-guide.html
-export const LegacyBase64Uri = {
+export const LEGACY_BASE64_URI = {
   parse: (uri: string): Config => {
-    ShadowsocksUri.validateProtocol(uri);
+    SHADOWSOCKS_URI.validateProtocol(uri);
     const hashIndex = uri.indexOf('#');
     let b64EndIndex = hashIndex;
     let tagStartIndex = hashIndex + 1;
@@ -255,7 +255,7 @@ export const LegacyBase64Uri = {
 
   stringify: (config: Config) => {
     const {host, port, method, password, tag} = config;
-    const hash = ShadowsocksUri.getHash(tag);
+    const hash = SHADOWSOCKS_URI.getHash(tag);
     let b64EncodedData = b64Encode(`${method.data}:${password.data}@${host.data}:${port.data}`);
     const dataLength = b64EncodedData.length;
     let paddingLength = 0;
@@ -267,9 +267,9 @@ export const LegacyBase64Uri = {
 };
 
 // Ref: https://shadowsocks.org/en/spec/SIP002-URI-Scheme.html
-export const Sip002Uri = {
+export const SIP002_URI = {
   parse: (uri: string): Config => {
-    ShadowsocksUri.validateProtocol(uri);
+    SHADOWSOCKS_URI.validateProtocol(uri);
     // Can use built-in URL parser for expedience. Just have to replace "ss" with "http" to ensure
     // correct results.
     const inputForUrlParser = `http${uri.substring(2)}`;
@@ -307,10 +307,11 @@ export const Sip002Uri = {
   stringify: (config: Config) => {
     const {host, port, method, password, tag, extra} = config;
     const userInfo = b64Encode(`${method.data}:${password.data}`);
-    const uriHost = ShadowsocksUri.getUriFormattedHost(host);
-    const hash = ShadowsocksUri.getHash(tag);
+    const uriHost = SHADOWSOCKS_URI.getUriFormattedHost(host);
+    const hash = SHADOWSOCKS_URI.getHash(tag);
     let queryString = '';
     for (const key in extra) {
+      if (!key) continue;
       queryString += (queryString ? '&' : '?') + `${key}=${encodeURIComponent(extra[key])}`;
     }
     return `ss://${userInfo}@${uriHost}:${port.data}/${queryString}${hash}`;

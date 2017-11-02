@@ -9,10 +9,10 @@ const map = require('map-stream');
 const plugins = gulpLoadPlugins();
 
 // ----------------------------- GitHub Statuses ------------------------------
-import { Repository, Statuses, StatusOptions } from "commit-status-reporter";
+import { Repository, Statuses, StatusOptions } from 'commit-status-reporter';
 const githubRepository = new Repository(
-  "uProxy",
-  "ShadowsocksConfig",
+  'uProxy',
+  'ShadowsocksConfig',
   plugins.util.env.GITHUB_TOKEN,
 );
 console.log('Reporting on commit:', plugins.util.env.COMMIT);
@@ -82,7 +82,7 @@ gulp.task('build', (done: any) => {
 
 gulp.task('test:unit', () => {
   
-  const status = githubCommit.getStatus("Unit Tests");
+  const status = githubCommit.getStatus('Unit Tests');
   return status.report(Statuses.pending)
   .then(() => {
     return new Promise((resolve) => {
@@ -112,12 +112,12 @@ gulp.task('tslint', () => {
   const status = githubCommit.getStatus('TypeScript Code Style');
   return status.report(Statuses.pending)
     .then(() => {
-      return gulp.src('*.ts')
+      return gulp.src('shadowsocks_config.ts')
         .pipe(plugins.tslint({
           configuration: 'tslint.json',
           formatter: 'prose'
         }))
-        .pipe(map(function(file, done) {
+        .pipe(map((file, done) => {
           errorCount += file.tslint.errorCount;
           done(null, file);
         }))
@@ -146,4 +146,10 @@ gulp.task('test', (done: any) => {
 
 gulp.task('default', ['build:lib']);
 
-gulp.task('travis', ['test']);
+gulp.task('travis', (done: any) => {
+  runSequence(
+    'tslint',
+    'test',
+    done
+  );
+});
