@@ -1,6 +1,6 @@
 {
   "name": "ShadowsocksConfig",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "ShadowsocksConfig",
   "main": "ShadowsocksConfig",
   "scripts": {
