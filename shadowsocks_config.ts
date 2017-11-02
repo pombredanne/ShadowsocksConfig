@@ -116,7 +116,7 @@ export class Method extends ValidatedConfigField {
   }
 }
 
-// Currently no sanitization is performed for Password, Tag, or Plugin. Client code is responsible
+// Currently no sanitization is performed for Password or Tag. Client code is responsible
 // for sanitizing these values when received from untrusted input.
 // TODO: Document this in the README.
 export class Password extends ValidatedConfigField {
@@ -137,37 +137,35 @@ export class Tag extends ValidatedConfigField {
   }
 }
 
-export class Plugin extends ValidatedConfigField {
-  public readonly data: string;
-
-  constructor(plugin: Plugin | string = '') {
-    super();
-    this.data = plugin instanceof Plugin ? plugin.data : plugin;
-  }
-}
-
 export interface Config {
   host: Host;
   port: Port;
   method: Method;
   password: Password;
-  tag?: Tag;
-  plugin?: Plugin;
+  tag: Tag;
+  // For application-specific configuration extensions (e.g. SIP003 `plugin`)
+  extra: {[key: string]: string};
 }
 
-export function makeConfig(config: {[key: string]: any}): Config {
+export function makeConfig(input: {[key: string]: any}): Config {
   // Use "!" for the required fields to tell tsc that we handle undefined in the
   // ValidatedConfigFields we call; tsc can't figure that out otherwise.
-  return {
-    host: new Host(config.host!),
-    port: new Port(config.port!),
-    method: new Method(config.method!),
-    password: new Password(config.password!),
-    tag: new Tag(config.tag),
-    plugin: new Plugin(config.plugin),
+  const config = {
+    host: new Host(input.host!),
+    port: new Port(input.port!),
+    method: new Method(input.method!),
+    password: new Password(input.password!),
+    tag: new Tag(input.tag),  // input.tag might be undefined but Tag() handles that fine.
+    extra: {} as {[key: string]: string},
   };
+  // Put any remaining fields in `input` into `config.extra`.
+  for (const key of Object.keys(input)) {
+    if (!/^(host|port|method|password|tag)$/.test(key)) {
+      config.extra[key] = input[key] && input[key].toString();
+    }
+  }
+  return config;
 }
-
 
 export const ShadowsocksUri = {
   PROTOCOL: 'ss:',
@@ -176,8 +174,8 @@ export const ShadowsocksUri = {
     return host.isIPv6 ? `[${host.data}]` : host.data;
   },
 
-  getHash: (tag?: Tag) => {
-    return tag ? `#${encodeURIComponent(tag.data)}` : '';
+  getHash: (tag: Tag) => {
+    return tag.data ? `#${encodeURIComponent(tag.data)}` : '';
   },
 
   validateProtocol: (uri: string) => {
@@ -251,12 +249,13 @@ export const LegacyBase64Uri = {
     const portStartIndex = hostEndIndex + 1;
     const portString = hostAndPort.substring(portStartIndex);
     const port = new Port(portString);
-    return {method, password, host, port, tag};
+    const extra = {} as {[key: string]: string};  // empty because LegacyBase64Uri can't hold extra
+    return {method, password, host, port, tag, extra};
   },
 
   stringify: (config: Config) => {
-    const {method, password, host, port} = config;
-    const hash = ShadowsocksUri.getHash(config.tag);
+    const {host, port, method, password, tag} = config;
+    const hash = ShadowsocksUri.getHash(tag);
     let b64EncodedData = b64Encode(`${method.data}:${password.data}@${host.data}:${port.data}`);
     const dataLength = b64EncodedData.length;
     let paddingLength = 0;
@@ -268,11 +267,6 @@ export const LegacyBase64Uri = {
 };
 
 // Ref: https://shadowsocks.org/en/spec/SIP002-URI-Scheme.html
-// NOTE: Currently the plugin query param is preserved on a best-effort basis. It is silently
-//       dropped on platforms that do not support the full whatwg URL standard (cf. `searchParams`).
-//       Ref:
-//         - https://url.spec.whatwg.org/#url-class
-//         - https://caniuse.com/#feat=urlsearchparams
 export const Sip002Uri = {
   parse: (uri: string): Config => {
     ShadowsocksUri.validateProtocol(uri);
@@ -300,20 +294,25 @@ export const Sip002Uri = {
     const method = new Method(methodString);
     const passwordString = b64DecodedUserInfo.substring(colonIdx + 1);
     const password = new Password(passwordString);
-    let plugin: Plugin | undefined;
-    if (urlParserResult.searchParams) {
-      const pluginString = urlParserResult.searchParams.get('plugin');
-      plugin = pluginString ? new Plugin(pluginString) : undefined;
+    const queryParams = urlParserResult.search.substring(1).split('&');
+    const extra = {} as {[key: string]: string};
+    for (const pair of queryParams) {
+      const [key, value] = pair.split('=', 2);
+      if (!key) continue;
+      extra[key] = decodeURIComponent(value || '');
     }
-    return {method, password, host, port, tag, plugin};
+    return {method, password, host, port, tag, extra};
   },
 
   stringify: (config: Config) => {
-    const {host, port, method, password} = config;
+    const {host, port, method, password, tag, extra} = config;
     const userInfo = b64Encode(`${method.data}:${password.data}`);
     const uriHost = ShadowsocksUri.getUriFormattedHost(host);
-    const hash = ShadowsocksUri.getHash(config.tag);
-    const queryString = config.plugin && config.plugin.data ? `?plugin=${config.plugin.data}` : '';
+    const hash = ShadowsocksUri.getHash(tag);
+    let queryString = '';
+    for (const key in extra) {
+      queryString += (queryString ? '&' : '?') + `${key}=${encodeURIComponent(extra[key])}`;
+    }
     return `ss://${userInfo}@${uriHost}:${port.data}/${queryString}${hash}`;
   },
 };
