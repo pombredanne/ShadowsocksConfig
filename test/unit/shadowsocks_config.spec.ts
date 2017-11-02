@@ -273,6 +273,7 @@ describe('shadowsocks_config', () => {
       expect(config.port.data).to.equal(8888);
       expect(config.method.data).to.equal('bf-cfb');
       expect(config.password.data).to.equal('test');
+      expect(config.tag.data).to.equal('');
     });
 
     it('throws when parsing empty input', () => {

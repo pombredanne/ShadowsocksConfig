@@ -186,11 +186,11 @@ export const SHADOWSOCKS_URI = {
 
   parse: (uri: string): Config => {
     let error: Error | undefined;
-    for (const uriType of [LEGACY_BASE64_URI, SIP002_URI]) {
+    for (const uriType of [SIP002_URI, LEGACY_BASE64_URI]) {
       try {
         return uriType.parse(uri);
       } catch (e) {
-        error = error || e;
+        error = e;
       }
     }
     if (!(error instanceof InvalidUri)) {
@@ -209,11 +209,9 @@ export const LEGACY_BASE64_URI = {
   parse: (uri: string): Config => {
     SHADOWSOCKS_URI.validateProtocol(uri);
     const hashIndex = uri.indexOf('#');
-    let b64EndIndex = hashIndex;
-    let tagStartIndex = hashIndex + 1;
-    if (hashIndex === -1) {
-      b64EndIndex = tagStartIndex = uri.length;
-    }
+    const hasTag = hashIndex !== -1;
+    const b64EndIndex = hasTag ? hashIndex : uri.length;
+    const tagStartIndex = hasTag ? hashIndex + 1 : uri.length;
     const tag = new Tag(decodeURIComponent(uri.substring(tagStartIndex)));
     const b64EncodedData = uri.substring('ss://'.length, b64EndIndex);
     const b64DecodedData = b64Decode(b64EncodedData);
