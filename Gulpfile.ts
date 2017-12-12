@@ -81,7 +81,6 @@ gulp.task('build', (done: any) => {
 });
 
 gulp.task('test:unit', () => {
-  
   const status = githubCommit.getStatus('Unit Tests');
   return status.report(Statuses.pending)
   .then(() => {
@@ -107,7 +106,6 @@ gulp.task('test:unit', () => {
 
 
 gulp.task('tslint', () => {
-
   let errorCount = 0;
   const status = githubCommit.getStatus('TypeScript Code Style');
   return status.report(Statuses.pending)
